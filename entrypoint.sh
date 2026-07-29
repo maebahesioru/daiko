@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Fix Tor hidden service permissions (must be owned by root when running as root)
+chown -R root:root /var/lib/tor/hidden_service 2>/dev/null || true
+
 # Write torrc
 cat > /etc/tor/torrc <<EOF
 Log notice stdout
@@ -19,7 +22,7 @@ for i in $(seq 1 30); do
         echo "Hidden service ready: $(cat /var/lib/tor/hidden_service/hostname)"
         break
     fi
-    sleep 1
+    sleep 2
 done
 
 # Start Flask
