@@ -182,3 +182,28 @@ a:hover { color: #8cf; }
   border-radius: 8px;
   border: 1px solid #3a3a5e;
 }
+
+.poll-section {
+  background: #1a1a2e;
+  border: 1px solid #3a3a5e;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 1.2rem;
+}
+
+.poll-input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 6px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #12121e;
+  color: #ddd;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.poll-input:focus {
+  border-color: #4a8aff;
+  outline: none;
+}

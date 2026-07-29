@@ -89,10 +89,13 @@ class BotWorker:
             db.close()
 
     async def _execute(self, sub: Submission) -> dict:
+        import json as _json
         media = sub.media_file or ""
+        poll_choices = _json.loads(sub.poll_choices) if sub.poll_choices else None
+        poll_duration = sub.poll_duration or 0
         if sub.submit_type in ("tweet", "quote"):
             # Quote tweets are regular tweets with the quoted URL already in content
-            return await twitter.post_tweet(sub.content, media)
+            return await twitter.post_tweet(sub.content, media, poll_choices, poll_duration)
         elif sub.submit_type == "retweet":
             tid = sub.target_tweet_id
             if not tid:
@@ -102,7 +105,7 @@ class BotWorker:
             tid = sub.target_tweet_id
             if not tid:
                 raise ValueError("No target tweet ID for reply")
-            return await twitter.post_reply(sub.content, tid, bool(sub.like_original), media)
+            return await twitter.post_reply(sub.content, tid, bool(sub.like_original), media, poll_choices, poll_duration)
         else:
             raise ValueError(f"Unknown submit_type: {sub.submit_type}")
 

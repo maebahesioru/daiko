@@ -20,6 +20,8 @@ class Submission(Base):
     target_tweet_id = Column(String(64), default="")    # parsed tweet ID
     like_original = Column(Integer, default=0)          # 0 or 1
     media_file = Column(String(255), default="")        # uploaded media filename (in data/uploads/)
+    poll_choices = Column(Text, default="")              # JSON: ["choice1","choice2",...]
+    poll_duration = Column(Integer, default=0)           # minutes, 0=no poll
     status = Column(String(20), default="pending")      # pending, approved, rejected, posted, failed
     submitted_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     reviewed_at = Column(DateTime, nullable=True)

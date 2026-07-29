@@ -144,7 +144,10 @@ def index():
     selected = request.args.get("type", "tweet")
     if selected not in ("tweet", "retweet", "reply", "quote"):
         selected = "tweet"
-    resp = make_response(render_template("submit.html", is_onion=_is_onion(), selected_type=selected, onion_hostname=_onion_hostname))
+    show_poll = request.args.get("poll") == "1" and selected in ("tweet", "reply")
+    resp = make_response(render_template("submit.html",
+        is_onion=_is_onion(), selected_type=selected,
+        onion_hostname=_onion_hostname, show_poll=show_poll))
     return _noindex(resp)
 
 
@@ -157,27 +160,48 @@ def submit():
         target_url = request.form.get("target_url", "").strip()
         like_original = 1 if request.form.get("like_original") == "1" else 0
 
-        # --- Handle file upload ---
+        # --- Poll handling ---
+        has_poll = request.form.get("has_poll") == "1"
+        poll_choices_json = ""
+        poll_duration = 0
+        if has_poll and submit_type in ("tweet", "reply"):
+            choices = []
+            for key in sorted(request.form.keys()):
+                if key.startswith("poll_choice_") and request.form.get(key, "").strip():
+                    choices.append(request.form[key].strip())
+            if len(choices) >= 2:
+                poll_choices_json = json.dumps(choices, ensure_ascii=False)
+                poll_duration = int(request.form.get("poll_duration", "1440"))
+                if poll_duration < 5:
+                    poll_duration = 5
+                elif poll_duration > 10080:
+                    poll_duration = 10080
+            elif has_poll:
+                flash("投票には2つ以上の選択肢が必要です", "error")
+                return redirect(url_for("index", type=submit_type, poll="1"))
+
+        # --- Handle file upload (skip if poll) ---
         media_filename = ""
-        file = request.files.get("media")
-        if file and file.filename:
-            ext = os.path.splitext(file.filename)[1].lower().lstrip(".")
-            if ext not in ALLOWED_EXTENSIONS:
-                flash(f"未対応のファイル形式です: .{ext} (対応: {', '.join(sorted(ALLOWED_EXTENSIONS))})", "error")
-                return redirect(url_for("index"))
-            if file.content_length and file.content_length > MAX_UPLOAD_SIZE:
-                flash(f"ファイルが大きすぎます (最大 {MAX_UPLOAD_SIZE // 1024 // 1024}MB)", "error")
-                return redirect(url_for("index"))
-            # Save with unique name to prevent collisions
-            media_filename = f"{uuid.uuid4().hex}_{file.filename}"
-            file.save(os.path.join(UPLOAD_DIR, media_filename))
-            log.info("File uploaded: %s", media_filename)
+        if not poll_choices_json:
+            file = request.files.get("media")
+            if file and file.filename:
+                ext = os.path.splitext(file.filename)[1].lower().lstrip(".")
+                if ext not in ALLOWED_EXTENSIONS:
+                    flash(f"未対応のファイル形式です: .{ext} (対応: {', '.join(sorted(ALLOWED_EXTENSIONS))})", "error")
+                    return redirect(url_for("index"))
+                if file.content_length and file.content_length > MAX_UPLOAD_SIZE:
+                    flash(f"ファイルが大きすぎます (最大 {MAX_UPLOAD_SIZE // 1024 // 1024}MB)", "error")
+                    return redirect(url_for("index"))
+                # Save with unique name to prevent collisions
+                media_filename = f"{uuid.uuid4().hex}_{file.filename}"
+                file.save(os.path.join(UPLOAD_DIR, media_filename))
+                log.info("File uploaded: %s", media_filename)
 
         # Parse tweet ID from URL if provided
         target_tweet_id = _parse_tweet_id(target_url)
 
-        # Validation — content can be empty if media is attached
-        has_content = bool(content) or bool(media_filename)
+        # Validation — content can be empty if media or poll is attached
+        has_content = bool(content) or bool(media_filename) or bool(poll_choices_json)
         if submit_type in ("tweet", "reply", "quote") and not has_content:
             flash("投稿内容または画像/動画が必要です", "error")
             return redirect(url_for("index", type=submit_type))
@@ -206,6 +230,8 @@ def submit():
             target_tweet_id=target_tweet_id,
             like_original=like_original,
             media_file=media_filename,
+            poll_choices=poll_choices_json,
+            poll_duration=poll_duration,
             status="pending",
         )
         db.add(sub)
