@@ -39,6 +39,19 @@ init_db()
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
 
+# --- Onion hostname (read once at startup) ---
+_onion_hostname = ""
+try:
+    _hp = os.path.join(os.path.dirname(__file__), "..", "var", "lib", "tor", "hidden_service", "hostname")
+    # The file is at /var/lib/tor/hidden_service/hostname inside the container
+    for _p in ("/var/lib/tor/hidden_service/hostname",):
+        if os.path.exists(_p):
+            with open(_p) as _f:
+                _onion_hostname = _f.read().strip()
+            break
+except Exception:
+    pass
+
 
 # --- Jinja2 filter: linkify URLs in text ---
 import re as _re
@@ -131,7 +144,7 @@ def index():
     selected = request.args.get("type", "tweet")
     if selected not in ("tweet", "retweet", "reply", "quote"):
         selected = "tweet"
-    resp = make_response(render_template("submit.html", is_onion=_is_onion(), selected_type=selected))
+    resp = make_response(render_template("submit.html", is_onion=_is_onion(), selected_type=selected, onion_hostname=_onion_hostname))
     return _noindex(resp)
 
 
