@@ -8,11 +8,20 @@ services:
       - MAX_POSTS_PER_HOUR=${MAX_POSTS_PER_HOUR:-4}
       - MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE:-15728640}
       - SECRET_KEY=${SECRET_KEY}
-    ports:
-      - "5000:5000"
     volumes:
       - daiko_data:/app/data
     restart: unless-stopped
+    networks:
+      - coolify
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.daiko.entrypoints=http
+      - traefik.http.routers.daiko.rule=Host(`daiko.hikamer.f5.si`)
+      - traefik.http.services.daiko.loadbalancer.server.port=5000
 
 volumes:
   daiko_data:
+
+networks:
+  coolify:
+    external: true
