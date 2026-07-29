@@ -6,18 +6,18 @@
 <title>管理者パネル - 匿名ツイート代行</title>
 <link rel="stylesheet" href="/static/style.css?v=2">
 <style>
-.queue-table { width:100%; border-collapse:collapse; margin-top:1rem; font-size:0.9rem; table-layout:fixed; }
-.queue-table th, .queue-table td { padding:6px 8px; border-bottom:1px solid #333; text-align:left; vertical-align:top; overflow:hidden; }
+.queue-table { width:100%; border-collapse:collapse; margin-top:1rem; font-size:0.9rem; }
+.queue-table th, .queue-table td { padding:6px 10px; border-bottom:1px solid #333; text-align:left; vertical-align:top; }
 .queue-table th { background:#1a1a1a; position:sticky; top:0; white-space:nowrap; }
 .queue-table tr:hover { background:#1a1a1a; }
-.queue-table th:nth-child(1) { width:36px; }
-.queue-table th:nth-child(2) { width:60px; }
-.queue-table th:nth-child(4) { width:70px; }
-.queue-table th:nth-child(5) { width:70px; }
-.queue-table th:nth-child(6) { width:80px; }
-.queue-table th:nth-child(7) { width:90px; }
-/* Content column gets remaining space */
-.queue-table td:nth-child(3) { word-break:break-word; }
+.queue-table td { word-break:break-word; }
+/* Narrow columns: prevent wrapping */
+.queue-table th:nth-child(1),
+.queue-table td:nth-child(1) { white-space:nowrap; width:1%; }
+.queue-table th:nth-child(2),
+.queue-table td:nth-child(2) { white-space:nowrap; width:1%; }
+.queue-table th:nth-child(5),
+.queue-table td:nth-child(5) { white-space:nowrap; width:1%; }
 .status-pending { color:#f0c040; }
 .status-approved { color:#40c040; }
 .status-rejected { color:#c04040; }
