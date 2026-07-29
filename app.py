@@ -392,7 +392,10 @@ def admin_queue():
             # Estimate: position 0 = next to post
             mins_until = interval_mins * i
             if i == 0 and last_posted and last_posted.posted_at:
-                elapsed = (now - last_posted.posted_at).total_seconds()
+                posted_at = last_posted.posted_at
+                if posted_at.tzinfo is None:
+                    posted_at = posted_at.replace(tzinfo=timezone.utc)
+                elapsed = (now - posted_at).total_seconds()
                 remaining = max(0, MIN_POST_INTERVAL_SECONDS - elapsed)
                 mins_until = max(0, int(remaining // 60))
             queue_map[s.id] = (i + 1, mins_until)
