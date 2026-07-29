@@ -124,3 +124,37 @@ a:hover { color: #8cf; }
   margin-bottom: 1.2rem;
   text-align: center;
 }
+
+.type-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.type-tab {
+  flex: 1;
+  min-width: 80px;
+  padding: 10px 8px;
+  background: #1a1a2e;
+  border: 1px solid #3a3a5e;
+  border-radius: 8px;
+  color: #aac;
+  text-decoration: none;
+  text-align: center;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.type-tab:hover {
+  background: #2a2a4e;
+  border-color: #5a5a8e;
+  color: #fff;
+}
+
+.type-tab.active {
+  background: #2a3a5e;
+  border-color: #4a8aff;
+  color: #fff;
+  font-weight: bold;
+}
