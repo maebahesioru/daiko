@@ -119,24 +119,8 @@ class TwitterClient:
                           poll_choices: list[str] | None = None,
                           poll_duration: int = 0) -> dict:
         client = await self._get_client()
-        poll_uri = None
-        if poll_choices and len(poll_choices) >= 2:
-            poll_uri = await client.create_poll(choices=poll_choices, duration_minutes=poll_duration or 1440)
-            log.info("Poll created with %d choices (%d min)", len(poll_choices), poll_duration or 1440)
-        media_ids = []
-        if not poll_uri:
-            for fname in _parse_media_list(media_filenames):
-                mid = await self._upload_media(fname)
-                if mid:
-                    media_ids.append(mid)
-        tweet = await client.create_tweet(
-            text=text, media_ids=media_ids or None, poll_uri=poll_uri
-        )
-        tid = tweet.id
-        author = tweet.user.screen_name
-        url = f"https://x.com/{author}/status/{tid}"
-        log.info("Tweet posted: %s -> %s", tid, url)
-        return {"tweet_id": tid, "tweet_url": url}
+        return await self._post_single(client, text, media_filenames,
+                                        poll_choices, poll_duration)
 
     async def post_reply(self, text: str, reply_to_tweet_id: str,
                          like_original: bool = False, media_filenames: str = "[]",
@@ -146,25 +130,9 @@ class TwitterClient:
         if like_original:
             await client.favorite_tweet(reply_to_tweet_id)
             log.info("Liked original tweet %s", reply_to_tweet_id)
-        poll_uri = None
-        if poll_choices and len(poll_choices) >= 2:
-            poll_uri = await client.create_poll(choices=poll_choices, duration_minutes=poll_duration or 1440)
-            log.info("Poll created with %d choices (%d min)", len(poll_choices), poll_duration or 1440)
-        media_ids = []
-        if not poll_uri:
-            for fname in _parse_media_list(media_filenames):
-                mid = await self._upload_media(fname)
-                if mid:
-                    media_ids.append(mid)
-        tweet = await client.create_tweet(
-            text=text, reply_to=reply_to_tweet_id, media_ids=media_ids or None,
-            poll_uri=poll_uri
-        )
-        tid = tweet.id
-        author = tweet.user.screen_name
-        url = f"https://x.com/{author}/status/{tid}"
-        log.info("Reply posted: %s -> %s", tid, url)
-        return {"tweet_id": tid, "tweet_url": url}
+        return await self._post_single(client, text, media_filenames,
+                                        poll_choices, poll_duration,
+                                        reply_to_id=reply_to_tweet_id)
 
     async def do_retweet(self, target_tweet_id: str, like_original: bool = False) -> dict:
         client = await self._get_client()
