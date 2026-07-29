@@ -13,6 +13,7 @@ Routes:
   POST /admin/reset/<id>   — move failed back to pending
 """
 import logging
+import json
 import os
 import re
 import uuid
