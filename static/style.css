@@ -171,3 +171,14 @@ a:hover { color: #8cf; }
   color: #f55;
   font-weight: bold;
 }
+
+.media-preview {
+  margin: 0.5rem 0 1rem 0;
+  text-align: center;
+}
+
+.media-preview img,
+.media-preview video {
+  border-radius: 8px;
+  border: 1px solid #3a3a5e;
+}

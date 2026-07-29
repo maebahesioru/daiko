@@ -50,6 +50,7 @@
 {% if selected_type in ('tweet', 'reply') %}
 <label for="media">画像・GIF・動画 <span class="hint">（任意 / JPG PNG GIF WebP MP4 MOV / 最大50MB）</span></label>
 <input type="file" name="media" id="media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
+<div id="preview" class="media-preview"></div>
 {% endif %}
 
 {% if selected_type in ('retweet', 'reply', 'quote') %}
@@ -150,6 +151,32 @@
             ta.value = cut;
         }
     });
+
+    // --- Media preview ---
+    var mediaInput = document.getElementById("media");
+    var preview = document.getElementById("preview");
+    if (mediaInput && preview) {
+        mediaInput.addEventListener("change", function() {
+            preview.innerHTML = "";
+            var file = mediaInput.files[0];
+            if (!file) return;
+            var url = URL.createObjectURL(file);
+            var el;
+            if (file.type.startsWith("video/")) {
+                el = document.createElement("video");
+                el.src = url;
+                el.controls = true;
+                el.style.maxWidth = "100%";
+                el.style.maxHeight = "300px";
+            } else {
+                el = document.createElement("img");
+                el.src = url;
+                el.style.maxWidth = "100%";
+                el.style.maxHeight = "300px";
+            }
+            preview.appendChild(el);
+        });
+    }
 })();
 </script>
 
