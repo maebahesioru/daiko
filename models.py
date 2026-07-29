@@ -19,7 +19,7 @@ class Submission(Base):
     target_tweet_url = Column(Text, default="")         # original tweet URL for RT/reply
     target_tweet_id = Column(String(64), default="")    # parsed tweet ID
     like_original = Column(Integer, default=0)          # 0 or 1
-    media_file = Column(String(255), default="")        # uploaded media filename (in data/uploads/)
+    media_file = Column(Text, default="[]")              # JSON array of uploaded filenames
     poll_choices = Column(Text, default="")              # JSON: ["choice1","choice2",...]
     poll_duration = Column(Integer, default=0)           # minutes, 0=no poll
     status = Column(String(20), default="pending")      # pending, approved, rejected, posted, failed

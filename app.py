@@ -94,6 +94,14 @@ def linkify(text: str) -> str:
         return f'<a href="{url}" rel="nofollow noopener">{url}</a>'
     return Markup(_URL_RE.sub(_replace, escaped))
 
+@app.template_filter("parse_json")
+def parse_json_filter(s: str):
+    """Jinja2 filter: parse JSON string, return list/dict or original."""
+    try:
+        return json.loads(s)
+    except (json.JSONDecodeError, TypeError):
+        return s
+
 
 # ============================================================
 # Helpers
@@ -182,30 +190,34 @@ def submit():
                 return redirect(url_for("index", type=submit_type, poll="1"))
 
         # --- Handle file upload (skip if poll) ---
-        media_filename = ""
+        media_files = []
         if not poll_choices_json:
-            file = request.files.get("media")
-            if file and file.filename:
+            uploaded = request.files.getlist("media")
+            for file in uploaded[:4]:  # max 4 files
+                if not file or not file.filename:
+                    continue
                 ext = os.path.splitext(file.filename)[1].lower().lstrip(".")
                 if ext not in ALLOWED_EXTENSIONS:
                     flash(f"未対応のファイル形式です: .{ext} (対応: {', '.join(sorted(ALLOWED_EXTENSIONS))})", "error")
-                    return redirect(url_for("index"))
+                    return redirect(url_for("index", type=submit_type))
                 if file.content_length and file.content_length > MAX_UPLOAD_SIZE:
                     flash(f"ファイルが大きすぎます (最大 {MAX_UPLOAD_SIZE // 1024 // 1024}MB)", "error")
-                    return redirect(url_for("index"))
-                # Save with unique name to prevent collisions
-                media_filename = f"{uuid.uuid4().hex}_{file.filename}"
-                file.save(os.path.join(UPLOAD_DIR, media_filename))
-                log.info("File uploaded: %s", media_filename)
+                    return redirect(url_for("index", type=submit_type))
+                fname = f"{uuid.uuid4().hex}_{file.filename}"
+                file.save(os.path.join(UPLOAD_DIR, fname))
+                log.info("File uploaded: %s", fname)
+                media_files.append(fname)
+        media_filename = json.dumps(media_files, ensure_ascii=False) if media_files else "[]"
 
         # Parse tweet ID from URL if provided
         target_tweet_id = _parse_tweet_id(target_url)
 
         # ================ Validation ================
 
-        # * 本文が必須なタイプ
-        if submit_type in ("tweet", "reply", "quote") and not content.strip():
-            flash("* 本文を入力してください", "error")
+        # * 本文が必須なタイプ（画像/動画/投票があれば本文空欄可）
+        has_media_or_poll = bool(media_files) or has_poll
+        if submit_type in ("tweet", "reply", "quote") and not content.strip() and not has_media_or_poll:
+            flash("* 本文を入力してください（画像/動画がある場合は空欄可）", "error")
             return redirect(url_for("index", type=submit_type))
 
         # * 文字数制限

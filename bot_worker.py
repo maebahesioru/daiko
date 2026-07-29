@@ -69,14 +69,16 @@ class BotWorker:
                 sub.result_tweet_id = result.get("tweet_id", "")
                 sub.result_tweet_url = result.get("tweet_url", "")
                 log.info("Submission #%d posted: %s", sub.id, sub.result_tweet_url)
-                # Clean up media file if still present
+                # Clean up media files if still present
                 if sub.media_file:
-                    import os
+                    import os, json as _json2
                     from config import UPLOAD_DIR
-                    path = os.path.join(UPLOAD_DIR, sub.media_file)
-                    if os.path.exists(path):
-                        os.remove(path)
-                        log.info("Cleaned up media file: %s", sub.media_file)
+                    fnames = _json2.loads(sub.media_file) if sub.media_file.startswith("[") else [sub.media_file]
+                    for fname in fnames:
+                        path = os.path.join(UPLOAD_DIR, fname)
+                        if os.path.exists(path):
+                            os.remove(path)
+                            log.info("Cleaned up media file: %s", fname)
             except Exception as e:
                 sub.status = "failed"
                 sub.error_message = str(e)[:500]
@@ -90,7 +92,7 @@ class BotWorker:
 
     async def _execute(self, sub: Submission) -> dict:
         import json as _json
-        media = sub.media_file or ""
+        media_json = sub.media_file or "[]"
         poll_choices = _json.loads(sub.poll_choices) if sub.poll_choices else None
         poll_duration = sub.poll_duration or 0
         if sub.submit_type in ("tweet", "quote"):
@@ -99,7 +101,7 @@ class BotWorker:
                 client = await twitter._get_client()
                 await client.favorite_tweet(sub.target_tweet_id)
                 log.info("Liked quoted tweet %s", sub.target_tweet_id)
-            return await twitter.post_tweet(sub.content, media, poll_choices, poll_duration)
+            return await twitter.post_tweet(sub.content, media_json, poll_choices, poll_duration)
         elif sub.submit_type == "retweet":
             tid = sub.target_tweet_id
             if not tid:
@@ -109,7 +111,7 @@ class BotWorker:
             tid = sub.target_tweet_id
             if not tid:
                 raise ValueError("No target tweet ID for reply")
-            return await twitter.post_reply(sub.content, tid, bool(sub.like_original), media, poll_choices, poll_duration)
+            return await twitter.post_reply(sub.content, tid, bool(sub.like_original), media_json, poll_choices, poll_duration)
         else:
             raise ValueError(f"Unknown submit_type: {sub.submit_type}")
 

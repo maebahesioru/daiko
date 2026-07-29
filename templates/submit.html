@@ -84,8 +84,8 @@
 <!-- Media (tweet/reply/quote, hidden when poll active) -->
 {% if selected_type in ('tweet', 'reply', 'quote') %}
 <div id="media-fields" style="{% if show_poll %}display:none{% endif %}">
-  <label for="media">画像・GIF・動画 <span class="hint">（任意 / JPG PNG GIF WebP MP4 MOV / 最大50MB）</span></label>
-  <input type="file" name="media" id="media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
+  <label for="media">画像・GIF・動画 <span class="hint">（任意 / 最大4枚 / 各50MB）</span></label>
+  <input type="file" name="media" id="media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov" multiple>
   <div id="preview" class="media-preview"></div>
 </div>
 {% endif %}
@@ -172,26 +172,30 @@
         updatePollUI();
     }
 
-    // --- Media preview ---
+    // --- Media preview (multiple files) ---
     var mediaInput = document.getElementById("media");
     var preview = document.getElementById("preview");
     if (mediaInput && preview) {
         mediaInput.addEventListener("change", function() {
             preview.innerHTML = "";
-            var file = mediaInput.files[0];
-            if (!file) return;
-            var url = URL.createObjectURL(file);
-            var el;
-            if (file.type.startsWith("video/")) {
-                el = document.createElement("video");
-                el.src = url; el.controls = true;
-                el.style.maxWidth = "100%"; el.style.maxHeight = "300px";
-            } else {
-                el = document.createElement("img");
-                el.src = url;
-                el.style.maxWidth = "100%"; el.style.maxHeight = "300px";
+            var files = mediaInput.files;
+            for (var i = 0; i < Math.min(files.length, 4); i++) {
+                var file = files[i];
+                var url = URL.createObjectURL(file);
+                var el;
+                if (file.type.startsWith("video/")) {
+                    el = document.createElement("video");
+                    el.src = url; el.controls = true;
+                    el.style.maxWidth = "100%"; el.style.maxHeight = "200px";
+                    el.style.marginBottom = "4px";
+                } else {
+                    el = document.createElement("img");
+                    el.src = url;
+                    el.style.maxWidth = "100%"; el.style.maxHeight = "200px";
+                    el.style.marginBottom = "4px";
+                }
+                preview.appendChild(el);
             }
-            preview.appendChild(el);
         });
     }
 })();

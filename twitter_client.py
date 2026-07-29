@@ -38,6 +38,17 @@ def _load_cookies_as_dict():
     return cookies
 
 
+def _parse_media_list(raw: str) -> list[str]:
+    """Parse JSON array of media filenames."""
+    if not raw or raw in ("", "[]"):
+        return []
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        # backward compatibility: single filename as plain string
+        return [raw] if raw else []
+
+
 class TwitterClient:
     def __init__(self):
         self._client = None
@@ -82,7 +93,7 @@ class TwitterClient:
             pass
         return media_id
 
-    async def post_tweet(self, text: str, media_filename: str = "",
+    async def post_tweet(self, text: str, media_filenames: str = "[]",
                           poll_choices: list[str] | None = None,
                           poll_duration: int = 0) -> dict:
         client = await self._get_client()
@@ -91,10 +102,11 @@ class TwitterClient:
             poll_uri = await client.create_poll(choices=poll_choices, duration_minutes=poll_duration or 1440)
             log.info("Poll created with %d choices (%d min)", len(poll_choices), poll_duration or 1440)
         media_ids = []
-        if not poll_uri:  # can't attach media with poll
-            mid = await self._upload_media(media_filename)
-            if mid:
-                media_ids.append(mid)
+        if not poll_uri:
+            for fname in _parse_media_list(media_filenames):
+                mid = await self._upload_media(fname)
+                if mid:
+                    media_ids.append(mid)
         tweet = await client.create_tweet(
             text=text, media_ids=media_ids or None, poll_uri=poll_uri
         )
@@ -105,7 +117,7 @@ class TwitterClient:
         return {"tweet_id": tid, "tweet_url": url}
 
     async def post_reply(self, text: str, reply_to_tweet_id: str,
-                         like_original: bool = False, media_filename: str = "",
+                         like_original: bool = False, media_filenames: str = "[]",
                          poll_choices: list[str] | None = None,
                          poll_duration: int = 0) -> dict:
         client = await self._get_client()
@@ -118,9 +130,10 @@ class TwitterClient:
             log.info("Poll created with %d choices (%d min)", len(poll_choices), poll_duration or 1440)
         media_ids = []
         if not poll_uri:
-            mid = await self._upload_media(media_filename)
-            if mid:
-                media_ids.append(mid)
+            for fname in _parse_media_list(media_filenames):
+                mid = await self._upload_media(fname)
+                if mid:
+                    media_ids.append(mid)
         tweet = await client.create_tweet(
             text=text, reply_to=reply_to_tweet_id, media_ids=media_ids or None,
             poll_uri=poll_uri

@@ -38,8 +38,13 @@
 <p><strong>内容:</strong> {{ submission.content|linkify }}</p>
 {% endif %}
 
-{% if submission.media_file %}
-<p><strong>📎 メディア:</strong> {{ submission.media_file.split('_',1)[1] if '_' in submission.media_file else submission.media_file }}</p>
+{% if submission.media_file and submission.media_file != '[]' %}
+<p><strong>📎 メディア:</strong>
+{% set _mfiles = (submission.media_file|parse_json) if submission.media_file is string and submission.media_file.startswith('[') else [submission.media_file] %}
+{% for _mf in _mfiles %}
+{{ _mf.split('_',1)[1] if '_' in _mf else _mf }}{% if not loop.last %}, {% endif %}
+{% endfor %}
+</p>
 {% endif %}
 
 {% if submission.target_tweet_url %}

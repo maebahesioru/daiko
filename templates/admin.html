@@ -89,8 +89,14 @@
 {% if s.content %}
 <span class="text-pre">{{ s.content[:150]|linkify }}{% if s.content|length > 150 %}...{% endif %}</span><br>
 {% endif %}
-{% if s.media_file %}
-📎 <small>{{ s.media_file.split('_',1)[1] if '_' in s.media_file else s.media_file }}</small><br>
+{% if s.media_file and s.media_file != '[]' %}
+📎
+{% set _mfiles = (s.media_file|parse_json) if s.media_file is string and s.media_file.startswith('[') else [s.media_file] %}
+{% for _mf in _mfiles[:3] %}
+<small>{{ _mf.split('_',1)[1] if '_' in _mf else _mf }}</small>{% if not loop.last %}, {% endif %}
+{% endfor %}
+{% if _mfiles|length > 3 %}<small> 他{{ _mfiles|length - 3 }}件</small>{% endif %}<br>
+{% endif %}
 {% endif %}
 {% if s.target_tweet_url %}
 <small><a href="{{ s.target_tweet_url }}">対象ツイート</a></small>
