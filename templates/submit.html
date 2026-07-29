@@ -31,43 +31,44 @@
 {% endwith %}
 
 <div class="type-tabs">
-<a href="/?type=tweet{% if show_poll %}&poll=1{% endif %}" class="type-tab {% if selected_type == 'tweet' %}active{% endif %}">📝 ツイート</a>
+<a href="/?type=tweet" class="type-tab {% if selected_type == 'tweet' %}active{% endif %}">📝 ツイート</a>
 <a href="/?type=retweet" class="type-tab {% if selected_type == 'retweet' %}active{% endif %}">🔄 リツイート</a>
-<a href="/?type=reply{% if show_poll %}&poll=1{% endif %}" class="type-tab {% if selected_type == 'reply' %}active{% endif %}">💬 リプライ</a>
+<a href="/?type=reply" class="type-tab {% if selected_type == 'reply' %}active{% endif %}">💬 リプライ</a>
 <a href="/?type=quote" class="type-tab {% if selected_type == 'quote' %}active{% endif %}">💬 引用</a>
 </div>
 
 <form method="POST" action="/submit" enctype="multipart/form-data">
 <input type="hidden" name="type" value="{{ selected_type }}">
-{% if show_poll %}<input type="hidden" name="has_poll" value="1">{% endif %}
 
 {% if selected_type != 'retweet' %}
-<label for="content">投稿内容 <span class="hint">（*必須 / 全角140字/半角280字）</span></label>
+<label for="content">投稿内容
+{% if show_poll %}<span class="hint">（投票の質問文）</span>
+{% else %}<span class="hint">（全角140字/半角280字・混在可）</span>{% endif %}
+</label>
 <textarea name="content" id="content" rows="4" placeholder="ここにツイート内容を入力..."></textarea>
 <div id="counter" class="counter">残り280</div>
 <noscript><p class="hint">（JS無効のため文字数はサーバー側で判定されます）</p></noscript>
 {% endif %}
 
-{% if selected_type in ('tweet', 'reply', 'quote') %}
-
-{% if selected_type != 'quote' %}
-<!-- Poll toggle + fields (tweet/reply only) -->
-<label class="checkbox-label poll-toggle-label">
-  <input type="checkbox" id="poll-toggle" name="has_poll" value="1" {% if show_poll %}checked{% endif %}>
-  📊 投票を追加する（画像/動画の代わり）
-</label>
+<!-- Poll (tweet/reply only) -->
+{% if selected_type in ('tweet', 'reply') %}
+<div class="poll-toggle-row">
+  <label class="checkbox-label">
+    <input type="checkbox" id="poll-toggle" name="has_poll" value="1" {% if show_poll %}checked{% endif %}>
+    📊 投票を追加する（画像/動画の代わり）
+  </label>
+</div>
 <noscript>
-  <p class="hint">JS無効: 投票を付けるには <a href="?type={{ selected_type }}&poll=1">こちら</a></p>
+  <p class="hint" style="margin-top:-0.5rem;">JS無効: 投票フォームは <a href="?type={{ selected_type }}&poll=1">こちら</a> / <a href="?type={{ selected_type }}">戻す</a></p>
 </noscript>
 
 <div id="poll-fields" class="poll-section" style="{% if not show_poll %}display:none{% endif %}">
   <label>投票の選択肢 <span class="hint">（2〜4個 / 各25文字以内）</span></label>
-  <input type="text" name="poll_choice_1" maxlength="25" placeholder="選択肢 1" class="poll-input">
-  <input type="text" name="poll_choice_2" maxlength="25" placeholder="選択肢 2" class="poll-input">
+  <input type="text" name="poll_choice_1" maxlength="25" placeholder="選択肢 1（必須）" class="poll-input">
+  <input type="text" name="poll_choice_2" maxlength="25" placeholder="選択肢 2（必須）" class="poll-input">
   <input type="text" name="poll_choice_3" maxlength="25" placeholder="選択肢 3（任意）" class="poll-input">
   <input type="text" name="poll_choice_4" maxlength="25" placeholder="選択肢 4（任意）" class="poll-input">
-
-  <label for="poll_duration">投票期間 <span class="hint">（分 / デフォルト24時間）</span></label>
+  <label for="poll_duration">投票期間</label>
   <select name="poll_duration" id="poll_duration">
     <option value="5">5分</option>
     <option value="60">1時間</option>
@@ -80,12 +81,13 @@
 </div>
 {% endif %}
 
-{% if not show_poll %}
-<label for="media">画像・GIF・動画 <span class="hint">（任意 / JPG PNG GIF WebP MP4 MOV / 最大50MB）</span></label>
-<input type="file" name="media" id="media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
-<div id="preview" class="media-preview"></div>
-{% endif %}
-
+<!-- Media (tweet/reply/quote, hidden when poll active) -->
+{% if selected_type in ('tweet', 'reply', 'quote') %}
+<div id="media-fields" style="{% if show_poll %}display:none{% endif %}">
+  <label for="media">画像・GIF・動画 <span class="hint">（任意 / JPG PNG GIF WebP MP4 MOV / 最大50MB）</span></label>
+  <input type="file" name="media" id="media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
+  <div id="preview" class="media-preview"></div>
+</div>
 {% endif %}
 
 {% if selected_type in ('retweet', 'reply', 'quote') %}
@@ -101,15 +103,7 @@
 {% endif %}
 
 <p class="usage-hint">
-{% if selected_type == 'tweet' %}
-📝 テキスト・画像/動画・投票のいずれかを投稿します
-{% elif selected_type == 'retweet' %}
-🔄 対象ツイートをリツイートします
-{% elif selected_type == 'reply' %}
-💬 対象ツイートに返信します
-{% elif selected_type == 'quote' %}
-💬 対象ツイートを引用してコメントを投稿します
-{% endif %}
+{% if show_poll %}📊 投票付き{% endif %}{% if selected_type == 'tweet' %}ツイート{% elif selected_type == 'reply' %}リプライ{% elif selected_type == 'retweet' %}リツイート{% elif selected_type == 'quote' %}引用{% endif %}
 </p>
 
 <button type="submit" id="submit-btn">▶ 送信</button>
@@ -118,12 +112,53 @@
 
 <script>
 (function(){
+    var LIMIT = 280;
+
+    // --- Character counter ---
+    var ta = document.getElementById("content");
+    var counter = document.getElementById("counter");
+    if (ta && counter) {
+        function tweetWeight(text) {
+            var total = 0;
+            for (var i = 0; i < text.length; i++) {
+                var cp = text.charCodeAt(i);
+                if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < text.length) {
+                    var lo = text.charCodeAt(i + 1);
+                    if (lo >= 0xDC00 && lo <= 0xDFFF) { cp = ((cp - 0xD800) << 10) + (lo - 0xDC00) + 0x10000; i++; }
+                }
+                if ((cp >= 0x1100 && cp <= 0x115F) || (cp >= 0x2E80 && cp <= 0x303F) ||
+                    (cp >= 0x3040 && cp <= 0x33BF) || (cp >= 0x3400 && cp <= 0x4DBF) ||
+                    (cp >= 0x4E00 && cp <= 0x9FFF) || (cp >= 0xAC00 && cp <= 0xD7AF) ||
+                    (cp >= 0xF900 && cp <= 0xFAFF) || (cp >= 0xFF01 && cp <= 0xFF60) ||
+                    (cp >= 0xFFE0 && cp <= 0xFFE6) || (cp >= 0x1F200 && cp <= 0x1F2FF) ||
+                    (cp >= 0x1F300 && cp <= 0x1F5FF) || (cp >= 0x1F600 && cp <= 0x1F9FF) ||
+                    (cp >= 0x20000 && cp <= 0x2FFFF)) { total += 2; }
+                else { total += 1; }
+            }
+            return total;
+        }
+        ta.addEventListener("input", function() {
+            var val = ta.value, w = tweetWeight(val), rem = LIMIT - w;
+            if (rem >= 0) { counter.textContent = "残り" + rem; counter.className = "counter"; }
+            else { counter.textContent = "超過 " + Math.abs(rem); counter.className = "counter over"; }
+            if (w > LIMIT) {
+                var cut = "", cw = 0;
+                for (var i = 0; i < val.length; i++) {
+                    var ch = val.charAt(i), chw = tweetWeight(ch);
+                    if (cw + chw > LIMIT) break;
+                    cut += ch; cw += chw;
+                }
+                ta.value = cut;
+            }
+        });
+    }
+
     // --- Poll toggle ---
     var pollToggle = document.getElementById("poll-toggle");
     var pollFields = document.getElementById("poll-fields");
     var mediaFields = document.getElementById("media-fields");
     if (pollToggle && pollFields && mediaFields) {
-        pollToggle.addEventListener("change", function() {
+        function updatePollUI() {
             if (pollToggle.checked) {
                 pollFields.style.display = "block";
                 mediaFields.style.display = "none";
@@ -131,69 +166,11 @@
                 pollFields.style.display = "none";
                 mediaFields.style.display = "block";
             }
-        });
+        }
+        pollToggle.addEventListener("change", updatePollUI);
+        // Run on load to sync with server-rendered state
+        updatePollUI();
     }
-
-    // --- Character counter ---
-    var ta = document.getElementById("content");
-    var counter = document.getElementById("counter");
-    if (!ta || !counter) return;
-
-    var LIMIT = 280;
-
-    function tweetWeight(text) {
-        var total = 0;
-        for (var i = 0; i < text.length; i++) {
-            var cp = text.charCodeAt(i);
-            if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < text.length) {
-                var lo = text.charCodeAt(i + 1);
-                if (lo >= 0xDC00 && lo <= 0xDFFF) {
-                    cp = ((cp - 0xD800) << 10) + (lo - 0xDC00) + 0x10000;
-                    i++;
-                }
-            }
-            if ((cp >= 0x1100 && cp <= 0x115F) ||
-                (cp >= 0x2E80 && cp <= 0x303F) ||
-                (cp >= 0x3040 && cp <= 0x33BF) ||
-                (cp >= 0x3400 && cp <= 0x4DBF) ||
-                (cp >= 0x4E00 && cp <= 0x9FFF) ||
-                (cp >= 0xAC00 && cp <= 0xD7AF) ||
-                (cp >= 0xF900 && cp <= 0xFAFF) ||
-                (cp >= 0xFF01 && cp <= 0xFF60) ||
-                (cp >= 0xFFE0 && cp <= 0xFFE6) ||
-                (cp >= 0x1F200 && cp <= 0x1F2FF) ||
-                (cp >= 0x1F300 && cp <= 0x1F5FF) ||
-                (cp >= 0x1F600 && cp <= 0x1F9FF) ||
-                (cp >= 0x20000 && cp <= 0x2FFFF)) {
-                total += 2;
-            } else {
-                total += 1;
-            }
-        }
-        return total;
-    }
-
-    ta.addEventListener("input", function() {
-        var val = ta.value;
-        var weight = tweetWeight(val);
-        var remaining = LIMIT - weight;
-        if (remaining >= 0) {
-            counter.textContent = "残り" + remaining;
-            counter.className = "counter";
-        } else {
-            counter.textContent = "超過 " + Math.abs(remaining) + "（送信時に拒否されます）";
-            counter.className = "counter over";
-        }
-        if (weight > LIMIT) {
-            var cut = "", w = 0;
-            for (var i = 0; i < val.length; i++) {
-                var ch = val.charAt(i), chw = tweetWeight(ch);
-                if (w + chw > LIMIT) break;
-                cut += ch; w += chw;
-            }
-            ta.value = cut;
-        }
-    });
 
     // --- Media preview ---
     var mediaInput = document.getElementById("media");
