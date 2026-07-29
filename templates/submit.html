@@ -112,12 +112,12 @@
       <div class="thread-header">スレッド {{ ti }} <button type="button" class="thread-remove" onclick="removeThread(this)" style="float:right;background:none;border:none;color:#f55;cursor:pointer;font-size:0.8rem">✕</button></div>
       <textarea name="th{{ ti }}_content" rows="3" placeholder="スレッド {{ ti }} の内容..."></textarea>
       <div class="thread-options">
-        <div id="th{{ idx }}-media-fields">
+        <div id="th{{ ti }}-media-fields">
           <label class="small-label">画像・動画（最大4枚）</label>
           {% for i in range(1, 5) %}
           <div class="media-row">
-            <input type="file" name="th{{ idx }}_media_{{ i }}" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
-            <input type="text" name="th{{ idx }}_alt_{{ i }}" placeholder="alt（任意）" class="alt-input" style="font-size:0.8rem;">
+            <input type="file" name="th{{ ti }}_media_{{ i }}" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
+            <input type="text" name="th{{ ti }}_alt_{{ i }}" placeholder="alt（任意）" class="alt-input" style="font-size:0.8rem;">
           </div>
           {% endfor %}
         </div>
