@@ -201,20 +201,31 @@ def submit():
         # Parse tweet ID from URL if provided
         target_tweet_id = _parse_tweet_id(target_url)
 
-        # Validation — content can be empty if media or poll is attached
-        has_content = bool(content) or bool(media_filename) or bool(poll_choices_json)
-        if submit_type in ("tweet", "reply", "quote") and not has_content:
-            flash("投稿内容または画像/動画が必要です", "error")
+        # ================ Validation ================
+
+        # * 本文が必須なタイプ
+        if submit_type in ("tweet", "reply", "quote") and not content.strip():
+            flash("* 本文を入力してください", "error")
             return redirect(url_for("index", type=submit_type))
 
-        if submit_type in ("retweet", "reply", "quote") and not target_tweet_id:
-            flash("有効なツイートURLを入力してください", "error")
-            return redirect(url_for("index", type=submit_type))
-
+        # * 文字数制限
         if submit_type in ("tweet", "quote") and _tweet_weight(content) > _TWEET_WEIGHT_LIMIT:
             weight = _tweet_weight(content)
-            flash(f"文字数制限を超えています（現在: 重み{weight}/上限280）全角は2・半角は1でカウント", "error")
+            flash(f"* 文字数制限を超えています（重み{weight}/上限280）", "error")
             return redirect(url_for("index", type=submit_type))
+
+        # * 対象ツイートURLが必須なタイプ
+        if submit_type in ("retweet", "reply", "quote") and not target_tweet_id:
+            flash("* 対象ツイートURLを入力してください", "error")
+            return redirect(url_for("index", type=submit_type))
+
+        # * 投票がONなら選択肢が最低2つ必要
+        if has_poll and submit_type in ("tweet", "reply"):
+            choice_count = len([k for k in request.form.keys()
+                               if k.startswith("poll_choice_") and request.form.get(k, "").strip()])
+            if choice_count < 2:
+                flash("* 投票の選択肢を2つ以上入力してください", "error")
+                return redirect(url_for("index", type=submit_type, poll="1"))
 
         # For tweet/quote type, clear target URL fields (quote embeds via content)
         if submit_type in ("tweet", "quote"):

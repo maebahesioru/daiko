@@ -42,7 +42,7 @@
 {% if show_poll %}<input type="hidden" name="has_poll" value="1">{% endif %}
 
 {% if selected_type != 'retweet' %}
-<label for="content">投稿内容 <span class="hint">（全角140字/半角280字・混在可・Twitter準拠）</span></label>
+<label for="content">投稿内容 <span class="hint">（*必須 / 全角140字/半角280字）</span></label>
 <textarea name="content" id="content" rows="4" placeholder="ここにツイート内容を入力..."></textarea>
 <div id="counter" class="counter">残り280</div>
 <noscript><p class="hint">（JS無効のため文字数はサーバー側で判定されます）</p></noscript>
