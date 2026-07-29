@@ -102,7 +102,10 @@ def robots():
 
 @app.route("/")
 def index():
-    resp = make_response(render_template("submit.html", is_onion=_is_onion()))
+    selected = request.args.get("type", "tweet")
+    if selected not in ("tweet", "retweet", "reply", "quote"):
+        selected = "tweet"
+    resp = make_response(render_template("submit.html", is_onion=_is_onion(), selected_type=selected))
     return _noindex(resp)
 
 
@@ -138,15 +141,15 @@ def submit():
         has_content = bool(content) or bool(media_filename)
         if submit_type in ("tweet", "reply", "quote") and not has_content:
             flash("投稿内容または画像/動画が必要です", "error")
-            return redirect(url_for("index"))
+            return redirect(url_for("index", type=submit_type))
 
         if submit_type in ("retweet", "reply", "quote") and not target_tweet_id:
             flash("有効なツイートURLを入力してください", "error")
-            return redirect(url_for("index"))
+            return redirect(url_for("index", type=submit_type))
 
         if submit_type in ("tweet", "quote") and len(content) > 280:
             flash("280文字以内で入力してください", "error")
-            return redirect(url_for("index"))
+            return redirect(url_for("index", type=submit_type))
 
         # For tweet/quote type, clear target URL fields (quote embeds via content)
         if submit_type in ("tweet", "quote"):

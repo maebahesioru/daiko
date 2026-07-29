@@ -31,31 +31,35 @@
 
 <form method="POST" action="/submit" enctype="multipart/form-data">
 
-<p class="usage-hint">
-📝ツイート → 内容+画像可 | 🔄RT → URLのみ | 💬リプライ → 内容+画像+URL | 💬引用 → 内容+URL
-</p>
-
-<label>種類 <span class="hint">（必須）</span></label>
+<label>種類</label>
 <select name="type" required>
-<option value="tweet">📝 ツイート</option>
-<option value="retweet">🔄 リツイート (RT)</option>
-<option value="reply">💬 リプライ (返信)</option>
-<option value="quote">💬 引用 (Quote)</option>
+<option value="tweet" {% if selected_type == 'tweet' %}selected{% endif %}>📝 ツイート</option>
+<option value="retweet" {% if selected_type == 'retweet' %}selected{% endif %}>🔄 リツイート (RT)</option>
+<option value="reply" {% if selected_type == 'reply' %}selected{% endif %}>💬 リプライ (返信)</option>
+<option value="quote" {% if selected_type == 'quote' %}selected{% endif %}>💬 引用 (Quote)</option>
 </select>
 
-<label for="content">投稿内容 <span class="hint">（ツイート/リプライ/引用で必要・RTでは無視）</span></label>
+{% if selected_type != 'retweet' %}
+<label for="content">投稿内容 <span class="hint">（画像/動画があれば空欄可 / 最大280文字）</span></label>
 <textarea name="content" id="content" rows="4" maxlength="280" placeholder="ここにツイート内容を入力..."></textarea>
+{% endif %}
 
-<label for="media">画像・GIF・動画 <span class="hint">（ツイート/リプライで有効・RTでは無視 / 最大50MB）</span></label>
+{% if selected_type in ('tweet', 'reply') %}
+<label for="media">画像・GIF・動画 <span class="hint">（任意 / JPG PNG GIF WebP MP4 MOV / 最大50MB）</span></label>
 <input type="file" name="media" id="media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
+{% endif %}
 
-<label for="target_url">対象ツイートURL <span class="hint">（RT/リプライ/引用で必須・ツイートでは無視）</span></label>
+{% if selected_type in ('retweet', 'reply', 'quote') %}
+<label for="target_url">対象ツイートURL <span class="hint">（必須）</span></label>
 <input type="url" name="target_url" id="target_url" placeholder="https://x.com/user/status/123456...">
+{% endif %}
 
+{% if selected_type in ('retweet', 'reply') %}
 <label class="checkbox-label">
 <input type="checkbox" name="like_original" value="1">
-元ツイートに「いいね」も付ける（RT/リプライのみ有効）
+元ツイートに「いいね」も付ける
 </label>
+{% endif %}
 
 <button type="submit">▶ 送信</button>
 </form>
