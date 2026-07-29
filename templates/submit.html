@@ -41,7 +41,8 @@
 
 {% if selected_type != 'retweet' %}
 <label for="content">投稿内容 <span class="hint">（画像/動画があれば空欄可 / 最大280文字）</span></label>
-<textarea name="content" id="content" rows="4" maxlength="280" placeholder="ここにツイート内容を入力..."></textarea>
+<textarea name="content" id="content" rows="4" placeholder="ここにツイート内容を入力..."></textarea>
+<span class="hint" style="display:block;margin-top:-0.5rem;margin-bottom:1rem;">全角140字 / 半角280字（混在可・Twitterと同じ重み計算）</span>
 {% endif %}
 
 {% if selected_type in ('tweet', 'reply') %}

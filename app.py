@@ -44,6 +44,32 @@ app.secret_key = SECRET_KEY
 import re as _re
 _URL_RE = _re.compile(r'(https?://[^\s<>"]+)')
 
+_TWEET_WEIGHT_LIMIT = 280
+
+def _tweet_weight(text: str) -> int:
+    """Count tweet weight: CJK/fullwidth = 2, other = 1. Twitter's actual algo."""
+    total = 0
+    for ch in text:
+        cp = ord(ch)
+        # Full-width / CJK ranges (rough approximation matching Twitter's weight=2 chars)
+        if (0x1100 <= cp <= 0x115F or   # Hangul Jamo
+            0x2E80 <= cp <= 0x303F or   # CJK Radicals / Kana / Punctuation
+            0x3040 <= cp <= 0x33BF or   # Hiragana, Katakana, Bopomofo, Hangul, CJK Compatibility
+            0x3400 <= cp <= 0x4DBF or   # CJK Unified Ext-A
+            0x4E00 <= cp <= 0x9FFF or   # CJK Unified Ideographs
+            0xAC00 <= cp <= 0xD7AF or   # Hangul Syllables
+            0xF900 <= cp <= 0xFAFF or   # CJK Compatibility Ideographs
+            0xFF01 <= cp <= 0xFF60 or   # Fullwidth forms
+            0xFFE0 <= cp <= 0xFFE6 or   # Fullwidth signs
+            0x1F200 <= cp <= 0x1F2FF or # Enclosed Ideographic Supplement
+            0x1F300 <= cp <= 0x1F5FF or # Misc Symbols & Pictographs (emoji)
+            0x1F600 <= cp <= 0x1F9FF or # Emoticons
+            0x20000 <= cp <= 0x2FFFF):  # CJK Ext B+
+            total += 2
+        else:
+            total += 1
+    return total
+
 @app.template_filter("linkify")
 def linkify(text: str) -> str:
     """Escape HTML, then convert URLs to clickable links."""
@@ -147,8 +173,9 @@ def submit():
             flash("有効なツイートURLを入力してください", "error")
             return redirect(url_for("index", type=submit_type))
 
-        if submit_type in ("tweet", "quote") and len(content) > 280:
-            flash("280文字以内で入力してください", "error")
+        if submit_type in ("tweet", "quote") and _tweet_weight(content) > _TWEET_WEIGHT_LIMIT:
+            weight = _tweet_weight(content)
+            flash(f"文字数制限を超えています（現在: 重み{weight}/上限280）全角は2・半角は1でカウント", "error")
             return redirect(url_for("index", type=submit_type))
 
         # For tweet/quote type, clear target URL fields (quote embeds via content)
