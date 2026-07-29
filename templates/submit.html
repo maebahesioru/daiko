@@ -48,8 +48,10 @@
 <noscript><p class="hint">（JS無効のため文字数はサーバー側で判定されます）</p></noscript>
 {% endif %}
 
-{% if selected_type in ('tweet', 'reply') %}
-<!-- Poll toggle + fields -->
+{% if selected_type in ('tweet', 'reply', 'quote') %}
+
+{% if selected_type != 'quote' %}
+<!-- Poll toggle + fields (tweet/reply only) -->
 <label class="checkbox-label poll-toggle-label">
   <input type="checkbox" id="poll-toggle" name="has_poll" value="1" {% if show_poll %}checked{% endif %}>
   📊 投票を追加する（画像/動画の代わり）
@@ -76,13 +78,14 @@
     <option value="10080">7日</option>
   </select>
 </div>
+{% endif %}
 
-<!-- Media upload (hidden when poll is active) -->
-<div id="media-fields" style="{% if show_poll %}display:none{% endif %}">
-  <label for="media">画像・GIF・動画 <span class="hint">（任意 / JPG PNG GIF WebP MP4 MOV / 最大50MB）</span></label>
-  <input type="file" name="media" id="media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
-  <div id="preview" class="media-preview"></div>
-</div>
+{% if not show_poll %}
+<label for="media">画像・GIF・動画 <span class="hint">（任意 / JPG PNG GIF WebP MP4 MOV / 最大50MB）</span></label>
+<input type="file" name="media" id="media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
+<div id="preview" class="media-preview"></div>
+{% endif %}
+
 {% endif %}
 
 {% if selected_type in ('retweet', 'reply', 'quote') %}
