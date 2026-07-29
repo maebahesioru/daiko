@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e
 
-# Fix Tor hidden service permissions (must be owned by root when running as root)
+# Fix Tor hidden service permissions
 chown -R root:root /var/lib/tor/hidden_service 2>/dev/null || true
+chmod 700 /var/lib/tor/hidden_service 2>/dev/null || true
 
 # Write torrc
 cat > /etc/tor/torrc <<EOF

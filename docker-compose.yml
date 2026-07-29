@@ -10,6 +10,7 @@ services:
       - SECRET_KEY=${SECRET_KEY}
     volumes:
       - daiko_data:/app/data
+      - ./tor_hidden_service:/var/lib/tor/hidden_service
     restart: unless-stopped
     networks:
       - coolify
