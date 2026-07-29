@@ -39,37 +39,7 @@
 
 <form method="POST" action="/submit" enctype="multipart/form-data">
 <input type="hidden" name="type" value="{{ selected_type }}">
-<input type="hidden" name="thread_count" value="{{ thread_count }}">
-
-{% macro thread_tweet(idx, label) %}
-<div class="thread-block">
-  <div class="thread-header">{{ label }}</div>
-  <textarea name="th{{ idx }}_content" rows="3" placeholder="スレッド {{ idx }} の内容..."></textarea>
-  <div class="thread-options">
-    <div id="th{{ idx }}-media-fields">
-      <label class="small-label">画像・動画</label>
-      <input type="file" name="th{{ idx }}_media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov" multiple>
-    </div>
-    <div class="poll-toggle-row" style="margin-top:6px;">
-      <label class="checkbox-label small">
-        <input type="checkbox" name="th{{ idx }}_has_poll" value="1" onclick="toggleThreadPoll({{ idx }})">
-        投票
-      </label>
-    </div>
-    <div id="th{{ idx }}-poll-fields" class="poll-section" style="display:none">
-      <input type="text" name="th{{ idx }}_poll_choice_1" maxlength="25" placeholder="選択肢 1" class="poll-input">
-      <input type="text" name="th{{ idx }}_poll_choice_2" maxlength="25" placeholder="選択肢 2" class="poll-input">
-      <input type="text" name="th{{ idx }}_poll_choice_3" maxlength="25" placeholder="選択肢 3（任意）" class="poll-input">
-      <input type="text" name="th{{ idx }}_poll_choice_4" maxlength="25" placeholder="選択肢 4（任意）" class="poll-input">
-      <select name="th{{ idx }}_poll_duration" style="width:100%;margin-top:6px;">
-        <option value="5">5分</option><option value="60">1時間</option><option value="360">6時間</option>
-        <option value="720">12時間</option><option value="1440" selected>24時間</option>
-        <option value="2880">2日</option><option value="10080">7日</option>
-      </select>
-    </div>
-  </div>
-</div>
-{% endmacro %}
+<input type="hidden" name="thread_count" id="thread_count" value="{{ thread_count }}">
 
 {% if selected_type != 'retweet' %}
 <label for="content">投稿内容 <span class="hint">（全角140字/半角280字）</span></label>
@@ -85,6 +55,9 @@
     📊 投票を追加する（画像/動画の代わり）
   </label>
 </div>
+<noscript>
+  <p class="hint">JS無効: 投票フォームは <a href="?type={{ selected_type }}&poll=1">こちら</a></p>
+</noscript>
 <div id="poll-fields" class="poll-section" style="{% if not show_poll %}display:none{% endif %}">
   <label>投票の選択肢 <span class="hint">（2〜4個 / 各25文字以内）</span></label>
   <input type="text" name="poll_choice_1" maxlength="25" placeholder="選択肢 1" class="poll-input">
@@ -125,15 +98,40 @@
   <div class="thread-bar">
     <strong>🧵 スレッド</strong>
     <span class="hint">（最大5ツイート）</span>
-    {% if thread_count < 4 %}
-    <a href="?type={{ selected_type }}&thread={{ thread_count + 1 }}{% if show_poll %}&poll=1{% endif %}{% if request.args.get('retry') %}&retry=1{% endif %}" class="thread-add-btn">＋ 追加</a>
-    {% endif %}
-    <noscript><span class="hint">（＋でページ再読込）</span></noscript>
+    <button type="button" id="thread-add" class="thread-add-btn" onclick="return false">＋ 追加</button>
+    <noscript><a href="?type={{ selected_type }}&thread={{ thread_count + 1 }}" class="thread-add-btn">＋ 追加（再読込・入力消失注意）</a></noscript>
   </div>
-
-  {% for ti in range(1, thread_count + 1) %}
-    {{ thread_tweet(ti, "スレッド " ~ ti) }}
-  {% endfor %}
+  <div id="thread-blocks">
+    {% for ti in range(1, thread_count + 1) %}
+    <div class="thread-block" data-idx="{{ ti }}">
+      <div class="thread-header">スレッド {{ ti }} <button type="button" class="thread-remove" onclick="removeThread(this)" style="float:right;background:none;border:none;color:#f55;cursor:pointer;font-size:0.8rem">✕</button></div>
+      <textarea name="th{{ ti }}_content" rows="3" placeholder="スレッド {{ ti }} の内容..."></textarea>
+      <div class="thread-options">
+        <div id="th{{ ti }}-media-fields">
+          <label class="small-label">画像・動画</label>
+          <input type="file" name="th{{ ti }}_media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov" multiple>
+        </div>
+        <div class="poll-toggle-row" style="margin-top:6px;">
+          <label class="checkbox-label small">
+            <input type="checkbox" name="th{{ ti }}_has_poll" value="1" onclick="toggleThreadPoll({{ ti }})">
+            投票
+          </label>
+        </div>
+        <div id="th{{ ti }}-poll-fields" class="poll-section" style="display:none">
+          <input type="text" name="th{{ ti }}_poll_choice_1" maxlength="25" placeholder="選択肢 1" class="poll-input">
+          <input type="text" name="th{{ ti }}_poll_choice_2" maxlength="25" placeholder="選択肢 2" class="poll-input">
+          <input type="text" name="th{{ ti }}_poll_choice_3" maxlength="25" placeholder="選択肢 3（任意）" class="poll-input">
+          <input type="text" name="th{{ ti }}_poll_choice_4" maxlength="25" placeholder="選択肢 4（任意）" class="poll-input">
+          <select name="th{{ ti }}_poll_duration" style="width:100%;margin-top:6px;">
+            <option value="5">5分</option><option value="60">1時間</option><option value="360">6時間</option>
+            <option value="720">12時間</option><option value="1440" selected>24時間</option>
+            <option value="2880">2日</option><option value="10080">7日</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 </div>
 {% endif %}
 
@@ -146,10 +144,44 @@
 </form>
 </div>
 
+<!-- Thread template (hidden, cloned by JS) -->
+<script id="thread-tpl" type="text/html">
+<div class="thread-block" data-idx="__IDX__">
+  <div class="thread-header">スレッド __IDX__ <button type="button" class="thread-remove" onclick="removeThread(this)" style="float:right;background:none;border:none;color:#f55;cursor:pointer;font-size:0.8rem">✕</button></div>
+  <textarea name="th__IDX___content" rows="3" placeholder="スレッド __IDX__ の内容..."></textarea>
+  <div class="thread-options">
+    <div id="th__IDX__-media-fields">
+      <label class="small-label">画像・動画</label>
+      <input type="file" name="th__IDX___media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov" multiple>
+    </div>
+    <div class="poll-toggle-row" style="margin-top:6px;">
+      <label class="checkbox-label small">
+        <input type="checkbox" name="th__IDX___has_poll" value="1" onclick="toggleThreadPoll(__IDX__)">
+        投票
+      </label>
+    </div>
+    <div id="th__IDX__-poll-fields" class="poll-section" style="display:none">
+      <input type="text" name="th__IDX___poll_choice_1" maxlength="25" placeholder="選択肢 1" class="poll-input">
+      <input type="text" name="th__IDX___poll_choice_2" maxlength="25" placeholder="選択肢 2" class="poll-input">
+      <input type="text" name="th__IDX___poll_choice_3" maxlength="25" placeholder="選択肢 3（任意）" class="poll-input">
+      <input type="text" name="th__IDX___poll_choice_4" maxlength="25" placeholder="選択肢 4（任意）" class="poll-input">
+      <select name="th__IDX___poll_duration" style="width:100%;margin-top:6px;">
+        <option value="5">5分</option><option value="60">1時間</option><option value="360">6時間</option>
+        <option value="720">12時間</option><option value="1440" selected>24時間</option>
+        <option value="2880">2日</option><option value="10080">7日</option>
+      </select>
+    </div>
+  </div>
+</div>
+</script>
+
 <script>
 (function(){
     var LIMIT = 280;
+    var currentThreadCount = {{ thread_count }};
+    var MAX_THREADS = 4;
 
+    // Character counter
     var ta = document.getElementById("content");
     var counter = document.getElementById("counter");
     if (ta && counter) {
@@ -157,12 +189,14 @@
         ta.addEventListener("input",function(){var v=ta.value,w=tweetWeight(v),r=LIMIT-w;if(r>=0){counter.textContent="残り"+r;counter.className="counter"}else{counter.textContent="超過 "+Math.abs(r);counter.className="counter over"}if(w>LIMIT){var cut="",cw=0;for(var i=0;i<v.length;i++){var ch=v.charAt(i),chw=tweetWeight(ch);if(cw+chw>LIMIT)break;cut+=ch;cw+=chw}ta.value=cut}});
     }
 
+    // Poll toggle
     var pollT = document.getElementById("poll-toggle"), pollF = document.getElementById("poll-fields"), mediaF = document.getElementById("media-fields");
     if (pollT && pollF && mediaF) {
         function up(){if(pollT.checked){pollF.style.display="block";mediaF.style.display="none"}else{pollF.style.display="none";mediaF.style.display="block"}}
         pollT.addEventListener("change",up);up();
     }
 
+    // Media preview
     var mi = document.getElementById("media"), pv = document.getElementById("preview");
     if (mi && pv) {
         mi.addEventListener("change",function(){pv.innerHTML="";var fs=mi.files;for(var i=0;i<Math.min(fs.length,4);i++){var f=fs[i],url=URL.createObjectURL(f),el;if(f.type.startsWith("video/")){el=document.createElement("video");el.src=url;el.controls=true;el.style.maxWidth="100%";el.style.maxHeight="200px";el.style.marginBottom="4px"}else{el=document.createElement("img");el.src=url;el.style.maxWidth="100%";el.style.maxHeight="200px";el.style.marginBottom="4px"}pv.appendChild(el)}});
@@ -178,6 +212,51 @@
             else { pf.style.display = "none"; mf.style.display = "block"; }
         }
     };
+
+    // Add/remove thread blocks
+    var addBtn = document.getElementById("thread-add");
+    var tpl = document.getElementById("thread-tpl");
+    var blocks = document.getElementById("thread-blocks");
+    var countInput = document.getElementById("thread_count");
+
+    if (addBtn && tpl && blocks) {
+        addBtn.addEventListener("click", function() {
+            if (currentThreadCount >= MAX_THREADS) return;
+            currentThreadCount++;
+            var html = tpl.innerHTML.replace(/__IDX__/g, currentThreadCount);
+            var div = document.createElement("div");
+            div.innerHTML = html;
+            blocks.appendChild(div.firstElementChild);
+            countInput.value = currentThreadCount;
+            if (currentThreadCount >= MAX_THREADS) addBtn.style.display = "none";
+        });
+        if (currentThreadCount >= MAX_THREADS) addBtn.style.display = "none";
+    }
+
+    window.removeThread = function(btn) {
+        var block = btn.closest(".thread-block");
+        if (!block) return;
+        block.remove();
+        // Renumber remaining blocks
+        var all = blocks.querySelectorAll(".thread-block");
+        currentThreadCount = all.length;
+        countInput.value = currentThreadCount;
+        all.forEach(function(b, i) {
+            var idx = i + 1;
+            b.setAttribute("data-idx", idx);
+            var hdr = b.querySelector(".thread-header");
+            if (hdr) hdr.innerHTML = "スレッド " + idx + ' <button type="button" class="thread-remove" onclick="removeThread(this)" style="float:right;background:none;border:none;color:#f55;cursor:pointer;font-size:0.8rem">✕</button>';
+            b.querySelectorAll("[name]").forEach(function(el) {
+                el.name = el.name.replace(/th\d+_/, "th" + idx + "_");
+                el.id = el.id.replace(/th\d+-/, "th" + idx + "-");
+            });
+            // Update onclick on checkbox
+            var cb = b.querySelector('input[type="checkbox"]');
+            if (cb) cb.setAttribute("onclick", "toggleThreadPoll(" + idx + ")");
+        });
+        if (addBtn) addBtn.style.display = currentThreadCount >= MAX_THREADS ? "none" : "";
+    };
+
 })();
 </script>
 
