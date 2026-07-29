@@ -87,7 +87,12 @@
 </td>
 <td>
 {% if s.content %}
-{% if s.thread_items and s.thread_items != '[]' %}🧵 {% endif %}<span class="text-pre">{{ s.content[:150]|linkify }}{% if s.content|length > 150 %}...{% endif %}</span><br>
+{% if s.thread_items and s.thread_items != '[]' %}
+  {% set _th = s.thread_items|parse_json %}
+  🧵×{{ _th|length + 1 }}
+{% endif %}
+{% if s.poll_choices and s.poll_choices != '[]' %}📊 {% endif %}
+<span class="text-pre">{{ s.content[:150]|linkify }}{% if s.content|length > 150 %}...{% endif %}</span><br>
 {% endif %}
 {% if s.media_file and s.media_file != '[]' %}
 📎
@@ -103,7 +108,11 @@
 {% endif %}
 </td>
 <td>
-{% if s.like_original %}❤️ いいね付き{% endif %}
+{% if s.like_original %}❤️ いいね{% endif %}
+{% if s.poll_choices and s.poll_choices != '[]' %}
+  {% set _pc = s.poll_choices|parse_json %}
+  📊 {{ _pc[0] }} / {{ _pc[1] }}{% if _pc|length > 2 %} ...{% endif %}
+{% endif %}
 </td>
 <td class="status-{{ s.status }}">
 {% if s.status == 'pending' %}⏳ 審査待ち
