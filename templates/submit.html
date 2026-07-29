@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>匿名ツイート代行</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+<h1>🐦 匿名ツイート代行</h1>
+<p class="sub">フォームに入力するだけ。管理者の承認後に投稿されます。<br>JavaScript不要・IP記録なし・完全匿名。</p>
+
+{% if not is_onion %}
+<div class="clearnet-warning">
+⚠️ あなたはTor経由でアクセスしていません。<br>
+<strong>IPアドレスがネットワーク層で見えています。</strong><br>
+完全な匿名性を求めるなら <strong>.onion</strong> アドレスからアクセスしてください。
+</div>
+{% endif %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash">
+{% for cat, msg in messages %}
+<p class="flash-{{ cat }}">{{ msg }}</p>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<form method="POST" action="/submit" enctype="multipart/form-data">
+
+<label>種類 <span class="hint">（必須）</span></label>
+<select name="type" required>
+<option value="tweet">ツイート</option>
+<option value="retweet">リツイート (RT)</option>
+<option value="reply">リプライ (返信)</option>
+<option value="quote">引用 (Quote)</option>
+</select>
+
+<label for="content">投稿内容 <span class="hint">（画像/動画があれば空欄可 / 引用時はコメント / 最大280文字）</span></label>
+<textarea name="content" id="content" rows="4" maxlength="280" placeholder="ここにツイート内容を入力..."></textarea>
+
+<label for="media">画像・GIF・動画 <span class="hint">（任意 / JPG PNG GIF WebP MP4 MOV / 最大15MB）</span></label>
+<input type="file" name="media" id="media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
+
+<label for="target_url">対象ツイートURL <span class="hint">（RT・リプライ・引用時は必須）</span></label>
+<input type="url" name="target_url" id="target_url" placeholder="https://x.com/user/status/123456...">
+
+<label class="checkbox-label">
+<input type="checkbox" name="like_original" value="1">
+元ツイートに「いいね」も付ける（RT・リプライ時のみ有効）
+</label>
+
+<button type="submit">▶ 送信</button>
+</form>
+</div>
+</body>
+</html>

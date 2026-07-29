@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>投稿状態 - 匿名ツイート代行</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+<h1>🔍 投稿状態</h1>
+
+{% if not found %}
+<p>そのIDの投稿は見つかりませんでした。</p>
+<a href="/" class="btn">トップに戻る</a>
+{% else %}
+
+<div class="status-box status-{{ submission.status }}">
+<h2>#{{ submission.id }} — 
+{% if submission.submit_type == 'tweet' %}ツイート
+{% elif submission.submit_type == 'retweet' %}リツイート
+{% elif submission.submit_type == 'reply' %}リプライ
+{% elif submission.submit_type == 'quote' %}引用
+{% endif %}
+</h2>
+
+<div class="status-info">
+<p><strong>状態:</strong> 
+{% if submission.status == 'pending' %}⏳ 審査待ち
+{% elif submission.status == 'approved' %}✅ 承認済み（投稿待ち）
+{% elif submission.status == 'rejected' %}❌ 却下
+{% elif submission.status == 'posted' %}🐦 投稿完了
+{% elif submission.status == 'failed' %}⚠️ 投稿失敗
+{% endif %}
+</p>
+
+{% if submission.content %}
+<p><strong>内容:</strong> {{ submission.content|linkify }}</p>
+{% endif %}
+
+{% if submission.media_file %}
+<p><strong>📎 メディア:</strong> {{ submission.media_file.split('_',1)[1] if '_' in submission.media_file else submission.media_file }}</p>
+{% endif %}
+
+{% if submission.target_tweet_url %}
+<p><strong>対象:</strong> <a href="{{ submission.target_tweet_url }}">{{ submission.target_tweet_url }}</a></p>
+{% endif %}
+
+{% if submission.result_tweet_url %}
+<p><strong>投稿:</strong> <a href="{{ submission.result_tweet_url }}">{{ submission.result_tweet_url }}</a></p>
+{% endif %}
+
+{% if submission.error_message %}
+<p class="error-msg"><strong>エラー:</strong> {{ submission.error_message }}</p>
+{% endif %}
+
+<p><small>送信日時: {{ submission.submitted_at.strftime('%Y-%m-%d %H:%M UTC') if submission.submitted_at else 'N/A' }}</small></p>
+</div>
+</div>
+
+<a href="/" class="btn">トップに戻る</a>
+{% endif %}
+</div>
+</body>
+</html>

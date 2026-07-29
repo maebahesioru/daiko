@@ -1,0 +1,115 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0a0a0a;
+  color: #ccc;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 700px;
+  margin: 2rem auto;
+  padding: 2rem;
+}
+
+h1 { font-size: 1.5rem; margin-bottom: 0.5rem; color: #eee; }
+.sub { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+label { display: block; margin-top: 1rem; margin-bottom: 0.3rem; font-size: 0.9rem; color: #aaa; }
+.count { float: right; color: #666; font-size: 0.8rem; }
+
+input[type="text"],
+input[type="url"],
+input[type="password"],
+textarea,
+select {
+  width: 100%;
+  padding: 10px 12px;
+  background: #111;
+  color: #ddd;
+  border: 1px solid #333;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+textarea { resize: vertical; }
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #555;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0.5rem !important;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px; height: 18px;
+  accent-color: #c04040;
+}
+
+button, .btn {
+  display: inline-block;
+  margin-top: 1.5rem;
+  padding: 10px 24px;
+  background: #c04040;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+button:hover, .btn:hover { background: #d05050; }
+
+.flash { margin-bottom: 1rem; }
+.flash-success { color: #4f4; }
+.flash-error { color: #f44; }
+
+.status-link {
+  background: #111;
+  padding: 12px;
+  border-radius: 6px;
+  margin: 1rem 0;
+  word-break: break-all;
+}
+
+.status-link a { color: #4af; }
+
+.status-box {
+  background: #111;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.status-box h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+
+.status-info p { margin-bottom: 0.5rem; font-size: 0.95rem; }
+
+.error-msg { color: #f44; background: #1a0a0a; padding: 8px; border-radius: 4px; }
+
+.note { color: #666; font-size: 0.8rem; margin-top: 1rem; }
+
+a { color: #6af; }
+a:hover { color: #8cf; }
+
+.clearnet-warning {
+  background: #3a1a0a;
+  border: 1px solid #a05020;
+  color: #f0a050;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.clearnet-warning strong { color: #f0c070; }

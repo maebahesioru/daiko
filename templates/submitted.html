@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>送信完了 - 匿名ツイート代行</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+<h1>✅ 送信完了</h1>
+<p>あなたの投稿IDは <strong>#{{ submission_id }}</strong> です。</p>
+<p>管理者の確認後、順次投稿されます。以下のURLで状態を確認できます：</p>
+<div class="status-link">
+<a href="/status/{{ submission_id }}">/status/{{ submission_id }}</a>
+</div>
+<p class="note">※ このIDをメモしておいてください。匿名のため、IDがないと状態確認できません。</p>
+<a href="/" class="btn">もう一度送信</a>
+</div>
+</body>
+</html>

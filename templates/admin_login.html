@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理者ログイン</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+<h1>🔐 管理者ログイン</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash">
+{% for cat, msg in messages %}
+<p class="flash-{{ cat }}">{{ msg }}</p>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<form method="POST" action="/admin">
+<label for="password">パスワード</label>
+<input type="password" name="password" id="password" required>
+<button type="submit">ログイン</button>
+</form>
+</div>
+</body>
+</html>

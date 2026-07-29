@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理者パネル - 匿名ツイート代行</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.queue-table { width:100%; border-collapse:collapse; margin-top:1rem; font-size:0.9rem; }
+.queue-table th, .queue-table td { padding:8px 10px; border-bottom:1px solid #333; text-align:left; vertical-align:top; }
+.queue-table th { background:#1a1a1a; position:sticky; top:0; }
+.queue-table tr:hover { background:#1a1a1a; }
+.status-pending { color:#f0c040; }
+.status-approved { color:#40c040; }
+.status-rejected { color:#c04040; }
+.status-posted { color:#40a0ff; }
+.status-failed { color:#ff6040; }
+.btn-sm { padding:4px 10px; font-size:0.8rem; display:inline-block; margin:2px; }
+.btn-approve { background:#1a5c1a; color:#4f4; }
+.btn-reject { background:#5c1a1a; color:#f44; }
+.btn-reset { background:#5c5c1a; color:#ff4; }
+.text-pre { white-space:pre-wrap; word-break:break-all; max-width:250px; display:inline-block; }
+.reject-form { display:inline; }
+.reject-note { width:120px; padding:4px; background:#111; color:#ccc; border:1px solid #444; font-size:0.8rem; }
+.stats { display:flex; gap:1rem; margin:1rem 0; flex-wrap:wrap; }
+.stat { background:#1a1a1a; padding:8px 16px; border-radius:6px; }
+.stat b { font-size:1.3rem; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>📋 審査キュー</h1>
+<a href="/admin/logout" style="float:right;color:#f44;">ログアウト</a>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash">
+{% for cat, msg in messages %}
+<p class="flash-{{ cat }}">{{ msg }}</p>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+{% set pending = submissions|selectattr('status','equalto','pending')|list %}
+{% set approved = submissions|selectattr('status','equalto','approved')|list %}
+{% set posted = submissions|selectattr('status','equalto','posted')|list %}
+{% set rejected = submissions|selectattr('status','equalto','rejected')|list %}
+
+<div class="stats">
+<div class="stat">⏳ 審査待ち <b>{{ pending|length }}</b></div>
+<div class="stat">✅ 承認済 <b>{{ approved|length }}</b></div>
+<div class="stat">🐦 投稿済 <b>{{ posted|length }}</b></div>
+<div class="stat">❌ 却下 <b>{{ rejected|length }}</b></div>
+</div>
+
+<table class="queue-table">
+<thead>
+<tr>
+<th>ID</th>
+<th>種別</th>
+<th>内容/対象</th>
+<th>オプション</th>
+<th>状態</th>
+<th>結果</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody>
+{% for s in submissions %}
+<tr>
+<td>#{{ s.id }}</td>
+<td>
+{% if s.submit_type == 'tweet' %}📝ツイート
+{% elif s.submit_type == 'retweet' %}🔄RT
+{% elif s.submit_type == 'reply' %}💬リプライ
+{% elif s.submit_type == 'quote' %}💬引用
+{% endif %}
+</td>
+<td>
+{% if s.content %}
+<span class="text-pre">{{ s.content[:150]|linkify }}{% if s.content|length > 150 %}...{% endif %}</span><br>
+{% endif %}
+{% if s.media_file %}
+📎 <small>{{ s.media_file.split('_',1)[1] if '_' in s.media_file else s.media_file }}</small><br>
+{% endif %}
+{% if s.target_tweet_url %}
+<small><a href="{{ s.target_tweet_url }}">対象ツイート</a></small>
+{% endif %}
+</td>
+<td>
+{% if s.like_original %}❤️ いいね付き{% endif %}
+</td>
+<td class="status-{{ s.status }}">
+{% if s.status == 'pending' %}⏳ 審査待ち
+{% elif s.status == 'approved' %}✅ 承認済
+{% elif s.status == 'rejected' %}❌ 却下
+{% elif s.status == 'posted' %}🐦 投稿済
+{% elif s.status == 'failed' %}⚠️ 失敗
+{% endif %}
+{% if s.admin_note %}<br><small>{{ s.admin_note }}</small>{% endif %}
+</td>
+<td>
+{% if s.result_tweet_url %}
+<a href="{{ s.result_tweet_url }}">🔗</a>
+{% endif %}
+{% if s.error_message %}
+<small class="status-failed">{{ s.error_message[:100] }}</small>
+{% endif %}
+</td>
+<td>
+{% if s.status == 'pending' %}
+<form method="POST" action="/admin/approve/{{ s.id }}" style="display:inline;">
+<button class="btn-sm btn-approve">承認</button>
+</form>
+<form method="POST" action="/admin/reject/{{ s.id }}" class="reject-form">
+<input type="text" name="note" class="reject-note" placeholder="却下理由（任意）">
+<button class="btn-sm btn-reject">却下</button>
+</form>
+{% elif s.status == 'failed' %}
+<form method="POST" action="/admin/reset/{{ s.id }}" style="display:inline;">
+<button class="btn-sm btn-reset">再審査に戻す</button>
+</form>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% if not submissions %}
+<p>投稿はまだありません。</p>
+{% endif %}
+</div>
+
+<meta http-equiv="refresh" content="30">
+</body>
+</html>
