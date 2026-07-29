@@ -113,3 +113,14 @@ a:hover { color: #8cf; }
 }
 
 .clearnet-warning strong { color: #f0c070; }
+
+.usage-hint {
+  background: #1a1a2e;
+  border: 1px solid #3a3a5e;
+  color: #9af;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 1.2rem;
+  text-align: center;
+}
