@@ -116,7 +116,13 @@
 </td>
 <td class="status-{{ s.status }}">
 {% if s.status == 'pending' %}⏳ 審査待ち
-{% elif s.status == 'approved' %}✅ 承認済
+{% elif s.status == 'approved' %}
+  {% if s.id in queue_map %}
+    {% set _pos, _mins = queue_map[s.id] %}
+    ✅ 承認済<br><small>#{{ _pos }}・約{{ _mins }}分後</small>
+  {% else %}
+    ✅ 承認済
+  {% endif %}
 {% elif s.status == 'rejected' %}❌ 却下
 {% elif s.status == 'posted' %}🐦 投稿済
 {% elif s.status == 'failed' %}⚠️ 失敗

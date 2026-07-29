@@ -371,7 +371,34 @@ def admin_queue():
             .limit(200)
             .all()
         )
-        return render_template("admin.html", submissions=subs)
+
+        # Calculate queue position for approved items
+        from config import MIN_POST_INTERVAL_SECONDS
+        interval_mins = MIN_POST_INTERVAL_SECONDS // 60
+        # Find last posted time
+        last_posted = (
+            db.query(Submission)
+            .filter(Submission.status == "posted")
+            .order_by(Submission.posted_at.desc())
+            .first()
+        )
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        # Build position map {sub_id: position} for approved items
+        approved = [s for s in subs if s.status == "approved"]
+        approved.sort(key=lambda s: s.reviewed_at or datetime.min.replace(tzinfo=timezone.utc))
+        queue_map = {}
+        for i, s in enumerate(approved):
+            # Estimate: position 0 = next to post
+            mins_until = interval_mins * i
+            if i == 0 and last_posted and last_posted.posted_at:
+                elapsed = (now - last_posted.posted_at).total_seconds()
+                remaining = max(0, MIN_POST_INTERVAL_SECONDS - elapsed)
+                mins_until = max(0, int(remaining // 60))
+            queue_map[s.id] = (i + 1, mins_until)
+
+        return render_template("admin.html", submissions=subs,
+                               queue_map=queue_map, interval_mins=interval_mins)
     finally:
         db.close()
 
