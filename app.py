@@ -178,7 +178,7 @@ def submit():
                 elif poll_duration > 10080:
                     poll_duration = 10080
             elif has_poll:
-                flash("投票には2つ以上の選択肢が必要です", "error")
+                flash("* 投票の選択肢を2つ以上入力してください", "error")
                 return redirect(url_for("index", type=submit_type, poll="1"))
 
         # --- Handle file upload (skip if poll) ---
