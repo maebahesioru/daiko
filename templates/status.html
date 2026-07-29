@@ -40,9 +40,10 @@
 
 {% if submission.media_file and submission.media_file != '[]' %}
 <p><strong>📎 メディア:</strong>
-{% set _mfiles = (submission.media_file|parse_json) if submission.media_file is string and submission.media_file.startswith('[') else [submission.media_file] %}
-{% for _mf in _mfiles %}
-{{ _mf.split('_',1)[1] if '_' in _mf else _mf }}{% if not loop.last %}, {% endif %}
+{% set _raw = submission.media_file|parse_json %}
+{% for _mf in _raw %}
+{% set _fn = _mf.file if _mf is mapping else _mf %}
+{{ _fn.split('_',1)[1] if '_' in _fn else _fn }}{% if not loop.last %}, {% endif %}
 {% endfor %}
 </p>
 {% endif %}

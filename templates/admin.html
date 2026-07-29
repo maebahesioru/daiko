@@ -91,11 +91,12 @@
 {% endif %}
 {% if s.media_file and s.media_file != '[]' %}
 📎
-{% set _mfiles = (s.media_file|parse_json) if s.media_file is string and s.media_file.startswith('[') else [s.media_file] %}
-{% for _mf in _mfiles[:3] %}
-<small>{{ _mf.split('_',1)[1] if '_' in _mf else _mf }}</small>{% if not loop.last %}, {% endif %}
+{% set _raw = s.media_file|parse_json %}
+{% for _mf in _raw[:3] %}
+{% set _fn = _mf.file if _mf is mapping else _mf %}
+<small>{{ _fn.split('_',1)[1] if '_' in _fn else _fn }}</small>{% if not loop.last %}, {% endif %}
 {% endfor %}
-{% if _mfiles|length > 3 %}<small> 他{{ _mfiles|length - 3 }}件</small>{% endif %}<br>
+{% if _raw|length > 3 %}<small> 他{{ _raw|length - 3 }}件</small>{% endif %}<br>
 {% endif %}
 {% if s.target_tweet_url %}
 <small><a href="{{ s.target_tweet_url }}">対象ツイート</a></small>

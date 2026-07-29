@@ -75,13 +75,8 @@
 
 {% if selected_type in ('tweet', 'reply', 'quote') %}
 <div id="media-fields" style="{% if show_poll %}display:none{% endif %}">
-  <label>画像・GIF・動画 <span class="hint">（任意 / 最大4枚 / 各50MB）</span></label>
-  {% for i in range(1, 5) %}
-  <div class="media-row">
-    <input type="file" name="media_{{ i }}" id="media_{{ i }}" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
-    <input type="text" name="alt_{{ i }}" placeholder="altテキスト（任意 / 420文字まで）" class="alt-input">
-  </div>
-  {% endfor %}
+  <label for="media">画像・GIF・動画 <span class="hint">（任意 / 最大4枚 / 各50MB）</span></label>
+  <input type="file" name="media" id="media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov" multiple>
   <div id="preview" class="media-preview"></div>
 </div>
 {% endif %}
@@ -114,12 +109,7 @@
       <div class="thread-options">
         <div id="th{{ ti }}-media-fields">
           <label class="small-label">画像・動画（最大4枚）</label>
-          {% for i in range(1, 5) %}
-          <div class="media-row">
-            <input type="file" name="th{{ ti }}_media_{{ i }}" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
-            <input type="text" name="th{{ ti }}_alt_{{ i }}" placeholder="alt（任意）" class="alt-input" style="font-size:0.8rem;">
-          </div>
-          {% endfor %}
+          <input type="file" name="th{{ ti }}_media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov" multiple>
         </div>
         <div class="poll-toggle-row" style="margin-top:6px;">
           <label class="checkbox-label small">
@@ -162,22 +152,7 @@
   <div class="thread-options">
     <div id="th__IDX__-media-fields">
       <label class="small-label">画像・動画（最大4枚）</label>
-      <div class="media-row">
-        <input type="file" name="th__IDX___media_1" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
-        <input type="text" name="th__IDX___alt_1" placeholder="alt（任意）" class="alt-input" style="font-size:0.8rem;">
-      </div>
-      <div class="media-row">
-        <input type="file" name="th__IDX___media_2" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
-        <input type="text" name="th__IDX___alt_2" placeholder="alt（任意）" class="alt-input" style="font-size:0.8rem;">
-      </div>
-      <div class="media-row">
-        <input type="file" name="th__IDX___media_3" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
-        <input type="text" name="th__IDX___alt_3" placeholder="alt（任意）" class="alt-input" style="font-size:0.8rem;">
-      </div>
-      <div class="media-row">
-        <input type="file" name="th__IDX___media_4" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov">
-        <input type="text" name="th__IDX___alt_4" placeholder="alt（任意）" class="alt-input" style="font-size:0.8rem;">
-      </div>
+      <input type="file" name="th__IDX___media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov" multiple>
     </div>
     <div class="poll-toggle-row" style="margin-top:6px;">
       <label class="checkbox-label small">
@@ -221,42 +196,10 @@
         pollT.addEventListener("change",up);up();
     }
 
-    // --- Media preview (individual file inputs) ---
-    var previewDiv = document.getElementById("preview");
-    if (previewDiv) {
-        for (var mi = 1; mi <= 4; mi++) {
-            var inp = document.getElementById("media_" + mi);
-            if (inp) {
-                inp.addEventListener("change", (function(idx) {
-                    return function() {
-                        updatePreviews();
-                    };
-                })(mi));
-            }
-        }
-        function updatePreviews() {
-            previewDiv.innerHTML = "";
-            for (var mi = 1; mi <= 4; mi++) {
-                var inp = document.getElementById("media_" + mi);
-                if (inp && inp.files && inp.files[0]) {
-                    var f = inp.files[0];
-                    var url = URL.createObjectURL(f);
-                    var el;
-                    if (f.type.startsWith("video/")) {
-                        el = document.createElement("video");
-                        el.src = url; el.controls = true;
-                        el.style.maxWidth = "100%"; el.style.maxHeight = "150px";
-                        el.style.marginBottom = "4px";
-                    } else {
-                        el = document.createElement("img");
-                        el.src = url;
-                        el.style.maxWidth = "100%"; el.style.maxHeight = "150px";
-                        el.style.marginBottom = "4px";
-                    }
-                    previewDiv.appendChild(el);
-                }
-            }
-        }
+    // Media preview
+    var mi = document.getElementById("media"), pv = document.getElementById("preview");
+    if (mi && pv) {
+        mi.addEventListener("change",function(){pv.innerHTML="";var fs=mi.files;for(var i=0;i<Math.min(fs.length,4);i++){var f=fs[i],url=URL.createObjectURL(f),el;if(f.type.startsWith("video/")){el=document.createElement("video");el.src=url;el.controls=true;el.style.maxWidth="100%";el.style.maxHeight="200px";el.style.marginBottom="4px"}else{el=document.createElement("img");el.src=url;el.style.maxWidth="100%";el.style.maxHeight="200px";el.style.marginBottom="4px"}pv.appendChild(el)}});
     }
 
     // Thread poll toggle

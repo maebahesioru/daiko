@@ -39,35 +39,20 @@ def _load_cookies_as_dict():
 
 
 def _parse_media_list(raw: str) -> list[str]:
-    """Parse JSON array of media — handles both ['file.jpg'] and [{'file':'x.jpg','alt':'desc'}] formats."""
+    """Parse JSON array of media filenames."""
     if not raw or raw in ("", "[]"):
         return []
     try:
         parsed = json.loads(raw)
     except (json.JSONDecodeError, TypeError):
         return [raw] if raw else []
+    # Handle both ["file.jpg"] and [{"file":"x.jpg","alt":"desc"}] formats
     result = []
     for item in parsed:
         if isinstance(item, dict):
             result.append(item.get("file", ""))
         elif isinstance(item, str):
             result.append(item)
-    return result
-
-def _parse_media_alt(raw: str) -> list[dict]:
-    """Parse JSON array to list of {file, alt} dicts."""
-    if not raw or raw in ("", "[]"):
-        return []
-    try:
-        parsed = json.loads(raw)
-    except (json.JSONDecodeError, TypeError):
-        return [{"file": raw, "alt": ""}] if raw else []
-    result = []
-    for item in parsed:
-        if isinstance(item, dict):
-            result.append(item)
-        elif isinstance(item, str):
-            result.append({"file": item, "alt": ""})
     return result
 
 
@@ -119,8 +104,24 @@ class TwitterClient:
                           poll_choices: list[str] | None = None,
                           poll_duration: int = 0) -> dict:
         client = await self._get_client()
-        return await self._post_single(client, text, media_filenames,
-                                        poll_choices, poll_duration)
+        poll_uri = None
+        if poll_choices and len(poll_choices) >= 2:
+            poll_uri = await client.create_poll(choices=poll_choices, duration_minutes=poll_duration or 1440)
+            log.info("Poll created with %d choices (%d min)", len(poll_choices), poll_duration or 1440)
+        media_ids = []
+        if not poll_uri:
+            for fname in _parse_media_list(media_filenames):
+                mid = await self._upload_media(fname)
+                if mid:
+                    media_ids.append(mid)
+        tweet = await client.create_tweet(
+            text=text, media_ids=media_ids or None, poll_uri=poll_uri
+        )
+        tid = tweet.id
+        author = tweet.user.screen_name
+        url = f"https://x.com/{author}/status/{tid}"
+        log.info("Tweet posted: %s -> %s", tid, url)
+        return {"tweet_id": tid, "tweet_url": url}
 
     async def post_reply(self, text: str, reply_to_tweet_id: str,
                          like_original: bool = False, media_filenames: str = "[]",
@@ -130,9 +131,25 @@ class TwitterClient:
         if like_original:
             await client.favorite_tweet(reply_to_tweet_id)
             log.info("Liked original tweet %s", reply_to_tweet_id)
-        return await self._post_single(client, text, media_filenames,
-                                        poll_choices, poll_duration,
-                                        reply_to_id=reply_to_tweet_id)
+        poll_uri = None
+        if poll_choices and len(poll_choices) >= 2:
+            poll_uri = await client.create_poll(choices=poll_choices, duration_minutes=poll_duration or 1440)
+            log.info("Poll created with %d choices (%d min)", len(poll_choices), poll_duration or 1440)
+        media_ids = []
+        if not poll_uri:
+            for fname in _parse_media_list(media_filenames):
+                mid = await self._upload_media(fname)
+                if mid:
+                    media_ids.append(mid)
+        tweet = await client.create_tweet(
+            text=text, reply_to=reply_to_tweet_id, media_ids=media_ids or None,
+            poll_uri=poll_uri
+        )
+        tid = tweet.id
+        author = tweet.user.screen_name
+        url = f"https://x.com/{author}/status/{tid}"
+        log.info("Reply posted: %s -> %s", tid, url)
+        return {"tweet_id": tid, "tweet_url": url}
 
     async def do_retweet(self, target_tweet_id: str, like_original: bool = False) -> dict:
         client = await self._get_client()
@@ -149,14 +166,14 @@ class TwitterClient:
                           poll_choices: list[str] | None = None,
                           poll_duration: int = 0,
                           reply_to_id: str | None = None) -> dict:
-        """Post a thread: first tweet + N sub-tweets.
-        Each thread item: {"content": "...", "media": "[...]", "poll_choices": [...], "poll_duration": N}
-        Returns info for the first tweet."""
+        """Post a thread: first tweet + N sub-tweets."""
         client = await self._get_client()
 
         # Post first tweet
-        result = await self._post_single(client, main_text, media_filenames,
-                                          poll_choices, poll_duration, reply_to_id)
+        result = await self.post_tweet(main_text, media_filenames, poll_choices, poll_duration)
+        # Override with reply_to if needed
+        if reply_to_id:
+            result = await self.post_reply(main_text, reply_to_id, False, media_filenames, poll_choices, poll_duration)
         prev_id = result["tweet_id"]
 
         # Post subsequent tweets in thread
@@ -167,35 +184,11 @@ class TwitterClient:
             pd = item.get("poll_duration", 0) or 0
             if not text and medias == "[]" and not pc:
                 continue
-            r = await self._post_single(client, text, medias, pc, pd, reply_to_id=prev_id)
+            r = await self.post_reply(text, prev_id, False, medias, pc, pd)
             prev_id = r["tweet_id"]
             log.info("Thread tweet: %s", r["tweet_url"])
 
         return result
-
-    async def _post_single(self, client, text: str, media_filenames: str,
-                            poll_choices, poll_duration, reply_to_id=None) -> dict:
-        poll_uri = None
-        if poll_choices and len(poll_choices) >= 2:
-            poll_uri = await client.create_poll(choices=poll_choices, duration_minutes=poll_duration or 1440)
-        media_ids = []
-        if not poll_uri:
-            for media_obj in _parse_media_alt(media_filenames):
-                fname = media_obj.get("file", "") or media_obj if isinstance(media_obj, str) else ""
-                alt_text = media_obj.get("alt", "") if isinstance(media_obj, dict) else ""
-                if not fname:
-                    continue
-                mid = await self._upload_media(fname)
-                if mid:
-                    media_ids.append(mid)
-                    if alt_text:
-                        await client.create_media_metadata(mid, alt_text=alt_text)
-                        log.info("Alt text set for %s: %s", mid, alt_text[:50])
-        tweet = await client.create_tweet(
-            text=text, media_ids=media_ids or None, poll_uri=poll_uri,
-            reply_to=reply_to_id
-        )
-        return {"tweet_id": tweet.id, "tweet_url": f"https://x.com/{tweet.user.screen_name}/status/{tweet.id}"}
 
 
 twitter = TwitterClient()
