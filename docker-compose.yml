@@ -6,7 +6,7 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - MIN_POST_INTERVAL=${MIN_POST_INTERVAL:-900}
       - MAX_POSTS_PER_HOUR=${MAX_POSTS_PER_HOUR:-4}
-      - MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE:-15728640}
+      - MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE:-52428800}
       - SECRET_KEY=${SECRET_KEY}
     volumes:
       - daiko_data:/app/data

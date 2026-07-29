@@ -11,7 +11,7 @@ UPLOAD_DIR = os.path.join(DATA_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # --- File Upload Limits ---
-MAX_UPLOAD_SIZE = int(os.environ.get("MAX_UPLOAD_SIZE", str(15 * 1024 * 1024)))  # 15MB
+MAX_UPLOAD_SIZE = int(os.environ.get("MAX_UPLOAD_SIZE", str(50 * 1024 * 1024)))  # 50MB
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp", "mp4", "mov"}
 
 # --- Admin (override via ADMIN_PASSWORD env var) ---

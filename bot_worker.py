@@ -69,6 +69,14 @@ class BotWorker:
                 sub.result_tweet_id = result.get("tweet_id", "")
                 sub.result_tweet_url = result.get("tweet_url", "")
                 log.info("Submission #%d posted: %s", sub.id, sub.result_tweet_url)
+                # Clean up media file if still present
+                if sub.media_file:
+                    import os
+                    from config import UPLOAD_DIR
+                    path = os.path.join(UPLOAD_DIR, sub.media_file)
+                    if os.path.exists(path):
+                        os.remove(path)
+                        log.info("Cleaned up media file: %s", sub.media_file)
             except Exception as e:
                 sub.status = "failed"
                 sub.error_message = str(e)[:500]

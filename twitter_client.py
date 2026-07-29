@@ -74,6 +74,12 @@ class TwitterClient:
             log.info("Uploading image: %s", filename)
             media_id = await client.upload_media(path)
         log.info("Media uploaded: %s -> %s", filename, media_id)
+        # Delete local file after successful upload
+        try:
+            os.remove(path)
+            log.info("Deleted local file: %s", path)
+        except OSError:
+            pass
         return media_id
 
     async def post_tweet(self, text: str, media_filename: str = "") -> dict:
