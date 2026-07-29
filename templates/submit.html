@@ -95,9 +95,9 @@
 <input type="url" name="target_url" id="target_url" placeholder="https://x.com/user/status/123456...">
 {% endif %}
 
-{% if selected_type in ('retweet', 'reply') %}
+{% if selected_type in ('retweet', 'reply', 'quote') %}
 <label class="checkbox-label">
-<input type="checkbox" name="like_original" value="1">
+<input type="checkbox" name="like_original" value="1" checked>
 元ツイートに「いいね」も付ける
 </label>
 {% endif %}

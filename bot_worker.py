@@ -94,7 +94,11 @@ class BotWorker:
         poll_choices = _json.loads(sub.poll_choices) if sub.poll_choices else None
         poll_duration = sub.poll_duration or 0
         if sub.submit_type in ("tweet", "quote"):
-            # Quote tweets are regular tweets with the quoted URL already in content
+            # Quote: like original first if requested
+            if sub.submit_type == "quote" and sub.like_original and sub.target_tweet_id:
+                client = await twitter._get_client()
+                await client.favorite_tweet(sub.target_tweet_id)
+                log.info("Liked quoted tweet %s", sub.target_tweet_id)
             return await twitter.post_tweet(sub.content, media, poll_choices, poll_duration)
         elif sub.submit_type == "retweet":
             tid = sub.target_tweet_id

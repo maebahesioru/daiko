@@ -233,7 +233,9 @@ def submit():
             if submit_type == "quote" and target_url:
                 content = f"{content}\n{target_url}"
             target_url = ""
-            target_tweet_id = ""
+            if submit_type == "tweet":
+                target_tweet_id = ""  # not needed for tweet
+            # For quote, keep target_tweet_id (used for like_original)
 
         sub = Submission(
             submit_type=submit_type,
