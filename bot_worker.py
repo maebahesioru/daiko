@@ -20,12 +20,13 @@ class BotWorker:
         self._running = False
         self._thread = None
         self._last_post_time = 0.0
+        self._loop = None  # single event loop
 
     def start(self):
         if self._running:
             return
         self._running = True
-        self._thread = threading.Thread(target=self._loop, daemon=True, name="bot-worker")
+        self._thread = threading.Thread(target=self._run_loop, daemon=True, name="bot-worker")
         self._thread.start()
         log.info("Bot worker started")
 
@@ -33,13 +34,23 @@ class BotWorker:
         self._running = False
         log.info("Bot worker stop requested")
 
-    def _loop(self):
+    def _run_loop(self):
+        """Single event loop that runs forever — avoids Event loop is closed errors."""
+        self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._loop)
+        self._loop.run_until_complete(self._main_loop())
+
+    async def _main_loop(self):
         while self._running:
             try:
-                asyncio.run(self._process_queue())
+                await self._process_queue()
             except Exception as e:
                 log.exception("Worker loop error: %s", e)
-            time.sleep(30)
+            # Poll interval
+            for _ in range(30):
+                if not self._running:
+                    return
+                await asyncio.sleep(1)
 
     async def _process_queue(self):
         db = SessionLocal()
@@ -58,7 +69,7 @@ class BotWorker:
             if elapsed < MIN_POST_INTERVAL_SECONDS:
                 wait = MIN_POST_INTERVAL_SECONDS - elapsed
                 log.info("Rate limit: waiting %.0fs before next post...", wait)
-                time.sleep(wait)
+                await asyncio.sleep(wait)
 
             # --- Post ---
             log.info("Processing submission #%d type=%s media=%s", sub.id, sub.submit_type, sub.media_file or "none")
