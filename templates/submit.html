@@ -40,9 +40,10 @@
 <input type="hidden" name="type" value="{{ selected_type }}">
 
 {% if selected_type != 'retweet' %}
-<label for="content">投稿内容 <span class="hint">（画像/動画があれば空欄可 / 最大280文字）</span></label>
+<label for="content">投稿内容 <span class="hint">（全角140字/半角280字・混在可・Twitter準拠）</span></label>
 <textarea name="content" id="content" rows="4" placeholder="ここにツイート内容を入力..."></textarea>
-<span class="hint" style="display:block;margin-top:-0.5rem;margin-bottom:1rem;">全角140字 / 半角280字（混在可・Twitterと同じ重み計算）</span>
+<div id="counter" class="counter">残り280</div>
+<noscript><p class="hint">（JS無効のため文字数はサーバー側で判定されます）</p></noscript>
 {% endif %}
 
 {% if selected_type in ('tweet', 'reply') %}
@@ -74,8 +75,82 @@
 {% endif %}
 </p>
 
-<button type="submit">▶ 送信</button>
+<button type="submit" id="submit-btn">▶ 送信</button>
 </form>
 </div>
+
+<script>
+(function(){
+    var ta = document.getElementById("content");
+    var counter = document.getElementById("counter");
+    var submitBtn = document.getElementById("submit-btn");
+    if (!ta || !counter) return;
+
+    var LIMIT = 280;
+
+    // Twitter-compatible weight: CJK/fullwidth = 2, else = 1
+    function tweetWeight(text) {
+        var total = 0;
+        for (var i = 0; i < text.length; i++) {
+            var cp = text.charCodeAt(i);
+            // Surrogate pair for emoji / high-plane chars
+            if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < text.length) {
+                var lo = text.charCodeAt(i + 1);
+                if (lo >= 0xDC00 && lo <= 0xDFFF) {
+                    cp = ((cp - 0xD800) << 10) + (lo - 0xDC00) + 0x10000;
+                    i++;
+                }
+            }
+            if ((cp >= 0x1100 && cp <= 0x115F) ||
+                (cp >= 0x2E80 && cp <= 0x303F) ||
+                (cp >= 0x3040 && cp <= 0x33BF) ||
+                (cp >= 0x3400 && cp <= 0x4DBF) ||
+                (cp >= 0x4E00 && cp <= 0x9FFF) ||
+                (cp >= 0xAC00 && cp <= 0xD7AF) ||
+                (cp >= 0xF900 && cp <= 0xFAFF) ||
+                (cp >= 0xFF01 && cp <= 0xFF60) ||
+                (cp >= 0xFFE0 && cp <= 0xFFE6) ||
+                (cp >= 0x1F200 && cp <= 0x1F2FF) ||
+                (cp >= 0x1F300 && cp <= 0x1F5FF) ||
+                (cp >= 0x1F600 && cp <= 0x1F9FF) ||
+                (cp >= 0x20000 && cp <= 0x2FFFF)) {
+                total += 2;
+            } else {
+                total += 1;
+            }
+        }
+        return total;
+    }
+
+    ta.addEventListener("input", function() {
+        var val = ta.value;
+        var weight = tweetWeight(val);
+        var remaining = LIMIT - weight;
+
+        if (remaining >= 0) {
+            counter.textContent = "残り" + remaining;
+            counter.className = "counter";
+        } else {
+            counter.textContent = "超過 " + Math.abs(remaining) + "（送信時に拒否されます）";
+            counter.className = "counter over";
+        }
+
+        // Block typing past limit
+        if (weight > LIMIT) {
+            var cut = "";
+            var w = 0;
+            for (var i = 0; i < val.length; i++) {
+                var ch = val.charAt(i);
+                var chw = tweetWeight(ch);
+                if (w + chw > LIMIT) break;
+                cut += ch;
+                w += chw;
+            }
+            ta.value = cut;
+        }
+    });
+})();
+</script>
+
 </body>
 </html>
