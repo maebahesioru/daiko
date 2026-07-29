@@ -74,7 +74,8 @@ class BotWorker:
                     import os, json as _json2
                     from config import UPLOAD_DIR
                     fnames = _json2.loads(sub.media_file) if sub.media_file.startswith("[") else [sub.media_file]
-                    for fname in fnames:
+                    for item in fnames:
+                        fname = item.get("file", item) if isinstance(item, dict) else item
                         path = os.path.join(UPLOAD_DIR, fname)
                         if os.path.exists(path):
                             os.remove(path)

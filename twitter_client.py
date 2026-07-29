@@ -39,14 +39,36 @@ def _load_cookies_as_dict():
 
 
 def _parse_media_list(raw: str) -> list[str]:
-    """Parse JSON array of media filenames."""
+    """Parse JSON array of media — handles both ['file.jpg'] and [{'file':'x.jpg','alt':'desc'}] formats."""
     if not raw or raw in ("", "[]"):
         return []
     try:
-        return json.loads(raw)
+        parsed = json.loads(raw)
     except (json.JSONDecodeError, TypeError):
-        # backward compatibility: single filename as plain string
         return [raw] if raw else []
+    result = []
+    for item in parsed:
+        if isinstance(item, dict):
+            result.append(item.get("file", ""))
+        elif isinstance(item, str):
+            result.append(item)
+    return result
+
+def _parse_media_alt(raw: str) -> list[dict]:
+    """Parse JSON array to list of {file, alt} dicts."""
+    if not raw or raw in ("", "[]"):
+        return []
+    try:
+        parsed = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return [{"file": raw, "alt": ""}] if raw else []
+    result = []
+    for item in parsed:
+        if isinstance(item, dict):
+            result.append(item)
+        elif isinstance(item, str):
+            result.append({"file": item, "alt": ""})
+    return result
 
 
 class TwitterClient:
@@ -190,10 +212,17 @@ class TwitterClient:
             poll_uri = await client.create_poll(choices=poll_choices, duration_minutes=poll_duration or 1440)
         media_ids = []
         if not poll_uri:
-            for fname in _parse_media_list(media_filenames):
+            for media_obj in _parse_media_alt(media_filenames):
+                fname = media_obj.get("file", "") or media_obj if isinstance(media_obj, str) else ""
+                alt_text = media_obj.get("alt", "") if isinstance(media_obj, dict) else ""
+                if not fname:
+                    continue
                 mid = await self._upload_media(fname)
                 if mid:
                     media_ids.append(mid)
+                    if alt_text:
+                        await client.create_media_metadata(mid, alt_text=alt_text)
+                        log.info("Alt text set for %s: %s", mid, alt_text[:50])
         tweet = await client.create_tweet(
             text=text, media_ids=media_ids or None, poll_uri=poll_uri,
             reply_to=reply_to_id

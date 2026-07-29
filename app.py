@@ -191,24 +191,36 @@ def submit():
                 flash("* 投票の選択肢を2つ以上入力してください", "error")
                 return redirect(url_for("index", type=submit_type, poll="1"))
 
-        # --- Handle file upload (skip if poll) ---
-        media_files = []
-        if not poll_choices_json:
-            uploaded = request.files.getlist("media")
-            for file in uploaded[:4]:  # max 4 files
+        # --- Handle file upload with alt text (skip if poll) ---
+        def _save_media_files(prefix=""):
+            """Save uploaded files for given prefix (prefix='' for main, 'thN_' for thread).
+            Returns list of {file, alt} dicts."""
+            result = []
+            if not prefix:
+                file_keys = ["media_1", "media_2", "media_3", "media_4"]
+                alt_keys = ["alt_1", "alt_2", "alt_3", "alt_4"]
+            else:
+                file_keys = [f"{prefix}media_1", f"{prefix}media_2", f"{prefix}media_3", f"{prefix}media_4"]
+                alt_keys = [f"{prefix}alt_1", f"{prefix}alt_2", f"{prefix}alt_3", f"{prefix}alt_4"]
+            for fk, ak in zip(file_keys, alt_keys):
+                file = request.files.get(fk)
+                alt = request.form.get(ak, "").strip()[:420]  # Twitter alt limit
                 if not file or not file.filename:
                     continue
                 ext = os.path.splitext(file.filename)[1].lower().lstrip(".")
                 if ext not in ALLOWED_EXTENSIONS:
-                    flash(f"未対応のファイル形式です: .{ext} (対応: {', '.join(sorted(ALLOWED_EXTENSIONS))})", "error")
-                    return redirect(url_for("index", type=submit_type))
+                    continue
                 if file.content_length and file.content_length > MAX_UPLOAD_SIZE:
-                    flash(f"ファイルが大きすぎます (最大 {MAX_UPLOAD_SIZE // 1024 // 1024}MB)", "error")
-                    return redirect(url_for("index", type=submit_type))
+                    continue
                 fname = f"{uuid.uuid4().hex}_{file.filename}"
                 file.save(os.path.join(UPLOAD_DIR, fname))
-                log.info("File uploaded: %s", fname)
-                media_files.append(fname)
+                log.info("File uploaded: %s alt=%s", fname, alt[:30] if alt else "(none)")
+                result.append({"file": fname, "alt": alt})
+            return result
+
+        media_files = []
+        if not poll_choices_json:
+            media_files = _save_media_files()
         media_filename = json.dumps(media_files, ensure_ascii=False) if media_files else "[]"
 
         # Parse tweet ID from URL if provided
@@ -271,23 +283,12 @@ def submit():
                         ti_poll_choices_json = json.dumps(ti_poll_choices, ensure_ascii=False)
                         ti_poll_duration = int(request.form.get(f"th{ti}_poll_duration", "1440"))
                 else:
-                    ti_uploaded = request.files.getlist(f"th{ti}_media")
-                    for file in ti_uploaded[:4]:
-                        if not file or not file.filename:
-                            continue
-                        ext = os.path.splitext(file.filename)[1].lower().lstrip(".")
-                        if ext not in ALLOWED_EXTENSIONS:
-                            continue
-                        if file.content_length and file.content_length > MAX_UPLOAD_SIZE:
-                            continue
-                        fname = f"{uuid.uuid4().hex}_{file.filename}"
-                        file.save(os.path.join(UPLOAD_DIR, fname))
-                        ti_media_files.append(fname)
+                    ti_media_files = _save_media_files(prefix=f"th{ti}_")
 
                 if ti_content or ti_media_files or ti_poll_choices_json:
                     thread_items.append({
                         "content": ti_content,
-                        "media": json.dumps(ti_media_files, ensure_ascii=False) if ti_media_files else "[]",
+                        "media": json.dumps(ti_media_files, ensure_ascii=False),
                         "poll_choices": ti_poll_choices,
                         "poll_duration": ti_poll_duration,
                     })
