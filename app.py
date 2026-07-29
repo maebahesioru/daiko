@@ -154,9 +154,11 @@ def index():
     if selected not in ("tweet", "retweet", "reply", "quote"):
         selected = "tweet"
     show_poll = request.args.get("poll") == "1" and selected in ("tweet", "reply")
+    thread_count = max(0, min(4, int(request.args.get("thread", "0") or 0)))
     resp = make_response(render_template("submit.html",
         is_onion=_is_onion(), selected_type=selected,
-        onion_hostname=_onion_hostname, show_poll=show_poll))
+        onion_hostname=_onion_hostname, show_poll=show_poll,
+        thread_count=thread_count))
     return _noindex(resp)
 
 
@@ -249,6 +251,49 @@ def submit():
                 target_tweet_id = ""  # not needed for tweet
             # For quote, keep target_tweet_id (used for like_original)
 
+        # --- Thread items ---
+        thread_items_json = ""
+        if submit_type in ("tweet", "reply", "quote"):
+            thread_items = []
+            for ti in range(1, 5):  # max 4 sub-tweets
+                ti_content = request.form.get(f"th{ti}_content", "").strip()
+                ti_has_poll = request.form.get(f"th{ti}_has_poll") == "1"
+                ti_poll_choices = []
+                ti_poll_choices_json = ""
+                ti_poll_duration = 0
+                ti_media_files = []
+
+                if ti_has_poll:
+                    for ck in sorted(request.form.keys()):
+                        if ck.startswith(f"th{ti}_poll_choice_") and request.form.get(ck, "").strip():
+                            ti_poll_choices.append(request.form[ck].strip())
+                    if len(ti_poll_choices) >= 2:
+                        ti_poll_choices_json = json.dumps(ti_poll_choices, ensure_ascii=False)
+                        ti_poll_duration = int(request.form.get(f"th{ti}_poll_duration", "1440"))
+                else:
+                    ti_uploaded = request.files.getlist(f"th{ti}_media")
+                    for file in ti_uploaded[:4]:
+                        if not file or not file.filename:
+                            continue
+                        ext = os.path.splitext(file.filename)[1].lower().lstrip(".")
+                        if ext not in ALLOWED_EXTENSIONS:
+                            continue
+                        if file.content_length and file.content_length > MAX_UPLOAD_SIZE:
+                            continue
+                        fname = f"{uuid.uuid4().hex}_{file.filename}"
+                        file.save(os.path.join(UPLOAD_DIR, fname))
+                        ti_media_files.append(fname)
+
+                if ti_content or ti_media_files or ti_poll_choices_json:
+                    thread_items.append({
+                        "content": ti_content,
+                        "media": json.dumps(ti_media_files, ensure_ascii=False) if ti_media_files else "[]",
+                        "poll_choices": ti_poll_choices,
+                        "poll_duration": ti_poll_duration,
+                    })
+            if thread_items:
+                thread_items_json = json.dumps(thread_items, ensure_ascii=False)
+
         sub = Submission(
             submit_type=submit_type,
             content=content,
@@ -258,6 +303,7 @@ def submit():
             media_file=media_filename,
             poll_choices=poll_choices_json,
             poll_duration=poll_duration,
+            thread_items=thread_items_json,
             status="pending",
         )
         db.add(sub)

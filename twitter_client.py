@@ -154,5 +154,51 @@ class TwitterClient:
         log.info("Retweeted: %s", target_tweet_id)
         return {"tweet_id": target_tweet_id, "tweet_url": url}
 
+    async def post_thread(self, main_text: str, thread_items: list[dict],
+                          media_filenames: str = "[]",
+                          poll_choices: list[str] | None = None,
+                          poll_duration: int = 0,
+                          reply_to_id: str | None = None) -> dict:
+        """Post a thread: first tweet + N sub-tweets.
+        Each thread item: {"content": "...", "media": "[...]", "poll_choices": [...], "poll_duration": N}
+        Returns info for the first tweet."""
+        client = await self._get_client()
+
+        # Post first tweet
+        result = await self._post_single(client, main_text, media_filenames,
+                                          poll_choices, poll_duration, reply_to_id)
+        prev_id = result["tweet_id"]
+
+        # Post subsequent tweets in thread
+        for item in (thread_items or []):
+            text = item.get("content", "") or ""
+            medias = item.get("media", "[]") or "[]"
+            pc = item.get("poll_choices")
+            pd = item.get("poll_duration", 0) or 0
+            if not text and medias == "[]" and not pc:
+                continue
+            r = await self._post_single(client, text, medias, pc, pd, reply_to_id=prev_id)
+            prev_id = r["tweet_id"]
+            log.info("Thread tweet: %s", r["tweet_url"])
+
+        return result
+
+    async def _post_single(self, client, text: str, media_filenames: str,
+                            poll_choices, poll_duration, reply_to_id=None) -> dict:
+        poll_uri = None
+        if poll_choices and len(poll_choices) >= 2:
+            poll_uri = await client.create_poll(choices=poll_choices, duration_minutes=poll_duration or 1440)
+        media_ids = []
+        if not poll_uri:
+            for fname in _parse_media_list(media_filenames):
+                mid = await self._upload_media(fname)
+                if mid:
+                    media_ids.append(mid)
+        tweet = await client.create_tweet(
+            text=text, media_ids=media_ids or None, poll_uri=poll_uri,
+            reply_to=reply_to_id
+        )
+        return {"tweet_id": tweet.id, "tweet_url": f"https://x.com/{tweet.user.screen_name}/status/{tweet.id}"}
+
 
 twitter = TwitterClient()

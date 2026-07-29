@@ -22,6 +22,7 @@ class Submission(Base):
     media_file = Column(Text, default="[]")              # JSON array of uploaded filenames
     poll_choices = Column(Text, default="")              # JSON: ["choice1","choice2",...]
     poll_duration = Column(Integer, default=0)           # minutes, 0=no poll
+    thread_items = Column(Text, default="")               # JSON array of sub-tweets
     status = Column(String(20), default="pending")      # pending, approved, rejected, posted, failed
     submitted_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     reviewed_at = Column(DateTime, nullable=True)

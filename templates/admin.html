@@ -87,7 +87,7 @@
 </td>
 <td>
 {% if s.content %}
-<span class="text-pre">{{ s.content[:150]|linkify }}{% if s.content|length > 150 %}...{% endif %}</span><br>
+{% if s.thread_items and s.thread_items != '[]' %}🧵 {% endif %}<span class="text-pre">{{ s.content[:150]|linkify }}{% if s.content|length > 150 %}...{% endif %}</span><br>
 {% endif %}
 {% if s.media_file and s.media_file != '[]' %}
 📎

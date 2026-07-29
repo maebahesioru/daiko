@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>匿名ツイート代行</title>
-<link rel="stylesheet" href="/static/style.css?v=4">
+<link rel="stylesheet" href="/static/style.css?v=5">
 </head>
 <body>
 <div class="container">
@@ -31,26 +31,53 @@
 {% endwith %}
 
 <div class="type-tabs">
-<a href="/?type=tweet" class="type-tab {% if selected_type == 'tweet' %}active{% endif %}">📝 ツイート</a>
-<a href="/?type=retweet" class="type-tab {% if selected_type == 'retweet' %}active{% endif %}">🔄 リツイート</a>
-<a href="/?type=reply" class="type-tab {% if selected_type == 'reply' %}active{% endif %}">💬 リプライ</a>
-<a href="/?type=quote" class="type-tab {% if selected_type == 'quote' %}active{% endif %}">💬 引用</a>
+<a href="?type=tweet" class="type-tab {% if selected_type == 'tweet' %}active{% endif %}">📝 ツイート</a>
+<a href="?type=retweet" class="type-tab {% if selected_type == 'retweet' %}active{% endif %}">🔄 リツイート</a>
+<a href="?type=reply" class="type-tab {% if selected_type == 'reply' %}active{% endif %}">💬 リプライ</a>
+<a href="?type=quote" class="type-tab {% if selected_type == 'quote' %}active{% endif %}">💬 引用</a>
 </div>
 
 <form method="POST" action="/submit" enctype="multipart/form-data">
 <input type="hidden" name="type" value="{{ selected_type }}">
+<input type="hidden" name="thread_count" value="{{ thread_count }}">
+
+{% macro thread_tweet(idx, label) %}
+<div class="thread-block">
+  <div class="thread-header">{{ label }}</div>
+  <textarea name="th{{ idx }}_content" rows="3" placeholder="スレッド {{ idx }} の内容..."></textarea>
+  <div class="thread-options">
+    <div id="th{{ idx }}-media-fields">
+      <label class="small-label">画像・動画</label>
+      <input type="file" name="th{{ idx }}_media" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov" multiple>
+    </div>
+    <div class="poll-toggle-row" style="margin-top:6px;">
+      <label class="checkbox-label small">
+        <input type="checkbox" name="th{{ idx }}_has_poll" value="1" onclick="toggleThreadPoll({{ idx }})">
+        投票
+      </label>
+    </div>
+    <div id="th{{ idx }}-poll-fields" class="poll-section" style="display:none">
+      <input type="text" name="th{{ idx }}_poll_choice_1" maxlength="25" placeholder="選択肢 1" class="poll-input">
+      <input type="text" name="th{{ idx }}_poll_choice_2" maxlength="25" placeholder="選択肢 2" class="poll-input">
+      <input type="text" name="th{{ idx }}_poll_choice_3" maxlength="25" placeholder="選択肢 3（任意）" class="poll-input">
+      <input type="text" name="th{{ idx }}_poll_choice_4" maxlength="25" placeholder="選択肢 4（任意）" class="poll-input">
+      <select name="th{{ idx }}_poll_duration" style="width:100%;margin-top:6px;">
+        <option value="5">5分</option><option value="60">1時間</option><option value="360">6時間</option>
+        <option value="720">12時間</option><option value="1440" selected>24時間</option>
+        <option value="2880">2日</option><option value="10080">7日</option>
+      </select>
+    </div>
+  </div>
+</div>
+{% endmacro %}
 
 {% if selected_type != 'retweet' %}
-<label for="content">投稿内容
-{% if show_poll %}<span class="hint">（投票の質問文）</span>
-{% else %}<span class="hint">（全角140字/半角280字・混在可）</span>{% endif %}
-</label>
+<label for="content">投稿内容 <span class="hint">（全角140字/半角280字）</span></label>
 <textarea name="content" id="content" rows="4" placeholder="ここにツイート内容を入力..."></textarea>
 <div id="counter" class="counter">残り280</div>
 <noscript><p class="hint">（JS無効のため文字数はサーバー側で判定されます）</p></noscript>
 {% endif %}
 
-<!-- Poll (tweet/reply only) -->
 {% if selected_type in ('tweet', 'reply') %}
 <div class="poll-toggle-row">
   <label class="checkbox-label">
@@ -58,30 +85,21 @@
     📊 投票を追加する（画像/動画の代わり）
   </label>
 </div>
-<noscript>
-  <p class="hint" style="margin-top:-0.5rem;">JS無効: 投票フォームは <a href="?type={{ selected_type }}&poll=1">こちら</a> / <a href="?type={{ selected_type }}">戻す</a></p>
-</noscript>
-
 <div id="poll-fields" class="poll-section" style="{% if not show_poll %}display:none{% endif %}">
   <label>投票の選択肢 <span class="hint">（2〜4個 / 各25文字以内）</span></label>
-  <input type="text" name="poll_choice_1" maxlength="25" placeholder="選択肢 1（必須）" class="poll-input">
-  <input type="text" name="poll_choice_2" maxlength="25" placeholder="選択肢 2（必須）" class="poll-input">
+  <input type="text" name="poll_choice_1" maxlength="25" placeholder="選択肢 1" class="poll-input">
+  <input type="text" name="poll_choice_2" maxlength="25" placeholder="選択肢 2" class="poll-input">
   <input type="text" name="poll_choice_3" maxlength="25" placeholder="選択肢 3（任意）" class="poll-input">
   <input type="text" name="poll_choice_4" maxlength="25" placeholder="選択肢 4（任意）" class="poll-input">
   <label for="poll_duration">投票期間</label>
   <select name="poll_duration" id="poll_duration">
-    <option value="5">5分</option>
-    <option value="60">1時間</option>
-    <option value="360">6時間</option>
-    <option value="720">12時間</option>
-    <option value="1440" selected>24時間</option>
-    <option value="2880">2日</option>
-    <option value="10080">7日</option>
+    <option value="5">5分</option><option value="60">1時間</option><option value="360">6時間</option>
+    <option value="720">12時間</option><option value="1440" selected>24時間</option>
+    <option value="2880">2日</option><option value="10080">7日</option>
   </select>
 </div>
 {% endif %}
 
-<!-- Media (tweet/reply/quote, hidden when poll active) -->
 {% if selected_type in ('tweet', 'reply', 'quote') %}
 <div id="media-fields" style="{% if show_poll %}display:none{% endif %}">
   <label for="media">画像・GIF・動画 <span class="hint">（任意 / 最大4枚 / 各50MB）</span></label>
@@ -102,8 +120,26 @@
 </label>
 {% endif %}
 
+{% if selected_type in ('tweet', 'reply', 'quote') %}
+<div class="thread-section">
+  <div class="thread-bar">
+    <strong>🧵 スレッド</strong>
+    <span class="hint">（最大5ツイート）</span>
+    {% if thread_count < 4 %}
+    <a href="?type={{ selected_type }}&thread={{ thread_count + 1 }}{% if show_poll %}&poll=1{% endif %}{% if request.args.get('retry') %}&retry=1{% endif %}" class="thread-add-btn">＋ 追加</a>
+    {% endif %}
+    <noscript><span class="hint">（＋でページ再読込）</span></noscript>
+  </div>
+
+  {% for ti in range(1, thread_count + 1) %}
+    {{ thread_tweet(ti, "スレッド " ~ ti) }}
+  {% endfor %}
+</div>
+{% endif %}
+
 <p class="usage-hint">
-{% if show_poll %}📊 投票付き{% endif %}{% if selected_type == 'tweet' %}ツイート{% elif selected_type == 'reply' %}リプライ{% elif selected_type == 'retweet' %}リツイート{% elif selected_type == 'quote' %}引用{% endif %}
+{% if show_poll %}📊 投票付き{% endif %}{% if thread_count > 0 %}🧵 スレッド({{ thread_count + 1 }}ツイート){% endif %}
+{% if selected_type == 'tweet' %}ツイート{% elif selected_type == 'reply' %}リプライ{% elif selected_type == 'retweet' %}リツイート{% elif selected_type == 'quote' %}引用{% endif %}
 </p>
 
 <button type="submit" id="submit-btn">▶ 送信</button>
@@ -114,90 +150,34 @@
 (function(){
     var LIMIT = 280;
 
-    // --- Character counter ---
     var ta = document.getElementById("content");
     var counter = document.getElementById("counter");
     if (ta && counter) {
-        function tweetWeight(text) {
-            var total = 0;
-            for (var i = 0; i < text.length; i++) {
-                var cp = text.charCodeAt(i);
-                if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < text.length) {
-                    var lo = text.charCodeAt(i + 1);
-                    if (lo >= 0xDC00 && lo <= 0xDFFF) { cp = ((cp - 0xD800) << 10) + (lo - 0xDC00) + 0x10000; i++; }
-                }
-                if ((cp >= 0x1100 && cp <= 0x115F) || (cp >= 0x2E80 && cp <= 0x303F) ||
-                    (cp >= 0x3040 && cp <= 0x33BF) || (cp >= 0x3400 && cp <= 0x4DBF) ||
-                    (cp >= 0x4E00 && cp <= 0x9FFF) || (cp >= 0xAC00 && cp <= 0xD7AF) ||
-                    (cp >= 0xF900 && cp <= 0xFAFF) || (cp >= 0xFF01 && cp <= 0xFF60) ||
-                    (cp >= 0xFFE0 && cp <= 0xFFE6) || (cp >= 0x1F200 && cp <= 0x1F2FF) ||
-                    (cp >= 0x1F300 && cp <= 0x1F5FF) || (cp >= 0x1F600 && cp <= 0x1F9FF) ||
-                    (cp >= 0x20000 && cp <= 0x2FFFF)) { total += 2; }
-                else { total += 1; }
-            }
-            return total;
-        }
-        ta.addEventListener("input", function() {
-            var val = ta.value, w = tweetWeight(val), rem = LIMIT - w;
-            if (rem >= 0) { counter.textContent = "残り" + rem; counter.className = "counter"; }
-            else { counter.textContent = "超過 " + Math.abs(rem); counter.className = "counter over"; }
-            if (w > LIMIT) {
-                var cut = "", cw = 0;
-                for (var i = 0; i < val.length; i++) {
-                    var ch = val.charAt(i), chw = tweetWeight(ch);
-                    if (cw + chw > LIMIT) break;
-                    cut += ch; cw += chw;
-                }
-                ta.value = cut;
-            }
-        });
+        function tweetWeight(text){var t=0;for(var i=0;i<text.length;i++){var c=text.charCodeAt(i);if(c>=0xD800&&c<=0xDBFF&&i+1<text.length){var l=text.charCodeAt(i+1);if(l>=0xDC00&&l<=0xDFFF){c=((c-0xD800)<<10)+(l-0xDC00)+0x10000;i++}}if((c>=0x1100&&c<=0x115F)||(c>=0x2E80&&c<=0x303F)||(c>=0x3040&&c<=0x33BF)||(c>=0x3400&&c<=0x4DBF)||(c>=0x4E00&&c<=0x9FFF)||(c>=0xAC00&&c<=0xD7AF)||(c>=0xF900&&c<=0xFAFF)||(c>=0xFF01&&c<=0xFF60)||(c>=0xFFE0&&c<=0xFFE6)||(c>=0x1F200&&c<=0x1F2FF)||(c>=0x1F300&&c<=0x1F5FF)||(c>=0x1F600&&c<=0x1F9FF)||(c>=0x20000&&c<=0x2FFFF))t+=2;else t+=1}return t}
+        ta.addEventListener("input",function(){var v=ta.value,w=tweetWeight(v),r=LIMIT-w;if(r>=0){counter.textContent="残り"+r;counter.className="counter"}else{counter.textContent="超過 "+Math.abs(r);counter.className="counter over"}if(w>LIMIT){var cut="",cw=0;for(var i=0;i<v.length;i++){var ch=v.charAt(i),chw=tweetWeight(ch);if(cw+chw>LIMIT)break;cut+=ch;cw+=chw}ta.value=cut}});
     }
 
-    // --- Poll toggle ---
-    var pollToggle = document.getElementById("poll-toggle");
-    var pollFields = document.getElementById("poll-fields");
-    var mediaFields = document.getElementById("media-fields");
-    if (pollToggle && pollFields && mediaFields) {
-        function updatePollUI() {
-            if (pollToggle.checked) {
-                pollFields.style.display = "block";
-                mediaFields.style.display = "none";
-            } else {
-                pollFields.style.display = "none";
-                mediaFields.style.display = "block";
-            }
-        }
-        pollToggle.addEventListener("change", updatePollUI);
-        // Run on load to sync with server-rendered state
-        updatePollUI();
+    var pollT = document.getElementById("poll-toggle"), pollF = document.getElementById("poll-fields"), mediaF = document.getElementById("media-fields");
+    if (pollT && pollF && mediaF) {
+        function up(){if(pollT.checked){pollF.style.display="block";mediaF.style.display="none"}else{pollF.style.display="none";mediaF.style.display="block"}}
+        pollT.addEventListener("change",up);up();
     }
 
-    // --- Media preview (multiple files) ---
-    var mediaInput = document.getElementById("media");
-    var preview = document.getElementById("preview");
-    if (mediaInput && preview) {
-        mediaInput.addEventListener("change", function() {
-            preview.innerHTML = "";
-            var files = mediaInput.files;
-            for (var i = 0; i < Math.min(files.length, 4); i++) {
-                var file = files[i];
-                var url = URL.createObjectURL(file);
-                var el;
-                if (file.type.startsWith("video/")) {
-                    el = document.createElement("video");
-                    el.src = url; el.controls = true;
-                    el.style.maxWidth = "100%"; el.style.maxHeight = "200px";
-                    el.style.marginBottom = "4px";
-                } else {
-                    el = document.createElement("img");
-                    el.src = url;
-                    el.style.maxWidth = "100%"; el.style.maxHeight = "200px";
-                    el.style.marginBottom = "4px";
-                }
-                preview.appendChild(el);
-            }
-        });
+    var mi = document.getElementById("media"), pv = document.getElementById("preview");
+    if (mi && pv) {
+        mi.addEventListener("change",function(){pv.innerHTML="";var fs=mi.files;for(var i=0;i<Math.min(fs.length,4);i++){var f=fs[i],url=URL.createObjectURL(f),el;if(f.type.startsWith("video/")){el=document.createElement("video");el.src=url;el.controls=true;el.style.maxWidth="100%";el.style.maxHeight="200px";el.style.marginBottom="4px"}else{el=document.createElement("img");el.src=url;el.style.maxWidth="100%";el.style.maxHeight="200px";el.style.marginBottom="4px"}pv.appendChild(el)}});
     }
+
+    // Thread poll toggle
+    window.toggleThreadPoll = function(idx) {
+        var cb = document.querySelector('input[name="th'+idx+'_has_poll"]');
+        var pf = document.getElementById('th'+idx+'-poll-fields');
+        var mf = document.getElementById('th'+idx+'-media-fields');
+        if (cb && pf && mf) {
+            if (cb.checked) { pf.style.display = "block"; mf.style.display = "none"; }
+            else { pf.style.display = "none"; mf.style.display = "block"; }
+        }
+    };
 })();
 </script>
 

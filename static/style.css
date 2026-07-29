@@ -207,3 +207,19 @@ a:hover { color: #8cf; }
   border-color: #4a8aff;
   outline: none;
 }
+
+.thread-section { margin: 1rem 0; }
+.thread-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.thread-add-btn {
+  display: inline-block; background: #2a3a5e; color: #8af; padding: 4px 12px;
+  border-radius: 6px; text-decoration: none; font-size: 0.85rem;
+}
+.thread-add-btn:hover { background: #3a4a6e; }
+.thread-block {
+  background: #12121e; border: 1px solid #2a2a4e; border-radius: 8px;
+  padding: 12px; margin-bottom: 8px;
+}
+.thread-header { color: #8af; font-size: 0.85rem; margin-bottom: 6px; font-weight: bold; }
+.thread-block textarea { font-size: 0.9rem; }
+.small-label { font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 2px; }
+.checkbox-label.small { font-size: 0.85rem; }

@@ -95,18 +95,33 @@ class BotWorker:
         media_json = sub.media_file or "[]"
         poll_choices = _json.loads(sub.poll_choices) if sub.poll_choices else None
         poll_duration = sub.poll_duration or 0
+        thread_items = _json.loads(sub.thread_items) if sub.thread_items else []
+
+        if sub.submit_type == "retweet":
+            tid = sub.target_tweet_id
+            if not tid:
+                raise ValueError("No target tweet ID for retweet")
+            return await twitter.do_retweet(tid, bool(sub.like_original))
+
+        # Check for thread
+        if thread_items:
+            if sub.submit_type == "quote" and sub.like_original and sub.target_tweet_id:
+                client = await twitter._get_client()
+                await client.favorite_tweet(sub.target_tweet_id)
+                log.info("Liked quoted tweet %s", sub.target_tweet_id)
+            reply_to = sub.target_tweet_id if sub.submit_type == "reply" else None
+            return await twitter.post_thread(
+                sub.content, thread_items, media_json,
+                poll_choices, poll_duration, reply_to_id=reply_to
+            )
+
         if sub.submit_type in ("tweet", "quote"):
-            # Quote: like original first if requested
             if sub.submit_type == "quote" and sub.like_original and sub.target_tweet_id:
                 client = await twitter._get_client()
                 await client.favorite_tweet(sub.target_tweet_id)
                 log.info("Liked quoted tweet %s", sub.target_tweet_id)
             return await twitter.post_tweet(sub.content, media_json, poll_choices, poll_duration)
-        elif sub.submit_type == "retweet":
-            tid = sub.target_tweet_id
-            if not tid:
-                raise ValueError("No target tweet ID for retweet")
-            return await twitter.do_retweet(tid, bool(sub.like_original))
+
         elif sub.submit_type == "reply":
             tid = sub.target_tweet_id
             if not tid:
