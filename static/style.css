@@ -101,6 +101,7 @@ button:hover, .btn:hover { background: #d05050; }
 a { color: #6af; }
 a:hover { color: #8cf; }
 
+/* --- Onion warning + URL wrap --- */
 .clearnet-warning {
   background: #3a1a0a;
   border: 1px solid #a05020;
@@ -111,8 +112,11 @@ a:hover { color: #8cf; }
   font-size: 0.9rem;
   line-height: 1.7;
 }
-
 .clearnet-warning strong { color: #f0c070; }
+.clearnet-warning a {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
 
 .usage-hint {
   background: #1a1a2e;
@@ -224,22 +228,28 @@ a:hover { color: #8cf; }
 .small-label { font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 2px; }
 .checkbox-label.small { font-size: 0.85rem; }
 
-/* --- Onion URL wrapping --- */
-.clearnet-warning a {
-  word-break: break-all;
-  overflow-wrap: anywhere;
+/* ===== ADMIN PANEL ===== */
+.stats { display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
+.stat { background: #1a1a1a; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; }
+.stat b { font-size: 1.3rem; }
+
+.queue-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* --- Admin table --- */
 .queue-table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 1rem;
   font-size: 0.85rem;
+  min-width: 600px;
 }
 .queue-table th, .queue-table td {
-  padding: 8px 6px;
+  padding: 6px 10px;
   border-bottom: 1px solid #2a2a4e;
   vertical-align: top;
+  word-break: break-word;
 }
 .queue-table th {
   text-align: left;
@@ -250,13 +260,12 @@ a:hover { color: #8cf; }
   white-space: nowrap;
 }
 .queue-table tr:hover { background: #1a1a2e; }
+.queue-table th:nth-child(1), .queue-table td:nth-child(1) { white-space: nowrap; width: 1%; }
+.queue-table th:nth-child(2), .queue-table td:nth-child(2) { white-space: nowrap; width: 1%; }
 
 .btn-sm {
-  padding: 4px 10px;
-  font-size: 0.8rem;
-  border-radius: 4px;
-  cursor: pointer;
-  border: none;
+  padding: 4px 10px; font-size: 0.8rem; border-radius: 4px;
+  cursor: pointer; border: none; display: inline-block; margin: 2px;
 }
 .btn-approve { background: #2a6a2a; color: #cfc; }
 .btn-approve:hover { background: #3a7a3a; }
@@ -267,8 +276,8 @@ a:hover { color: #8cf; }
 
 .reject-form { display: inline-flex; gap: 4px; align-items: center; }
 .reject-note {
-  padding: 4px 6px; font-size: 0.75rem; width: 100px;
-  background: #111; color: #aaa; border: 1px solid #333; border-radius: 4px;
+  padding: 4px 6px; font-size: 0.8rem; width: 120px;
+  background: #111; color: #ccc; border: 1px solid #444; border-radius: 4px;
 }
 
 .status-pending { color: #f0a030; }
@@ -279,30 +288,33 @@ a:hover { color: #8cf; }
 
 .text-pre { white-space: pre-wrap; word-break: break-word; }
 
-/* --- Mobile responsive --- */
+/* ===== MOBILE ===== */
 @media (max-width: 768px) {
-  .container { margin: 1rem 0.5rem; padding: 1rem; }
+  .container { margin: 1rem 0; padding: 0.75rem; }
   h1 { font-size: 1.2rem; }
-  .type-tab { font-size: 0.78rem; padding: 8px 4px; }
+  .type-tab { font-size: 0.75rem; padding: 8px 4px; min-width: 60px; }
+  .stats { gap: 0.5rem; }
+  .stat { padding: 6px 10px; font-size: 0.8rem; }
+  .stat b { font-size: 1.1rem; }
 
-  /* Table scroll */
-  .queue-table-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    margin: 0 -1rem;
-    padding: 0 1rem;
-  }
-  .queue-table { font-size: 0.78rem; }
-  .queue-table th, .queue-table td { padding: 6px 4px; }
-
-  .btn-sm { padding: 3px 8px; font-size: 0.72rem; }
-  .reject-note { width: 70px; font-size: 0.7rem; }
+  .queue-table { font-size: 0.75rem; }
+  .queue-table th, .queue-table td { padding: 5px 4px; }
+  .btn-sm { padding: 5px 10px; font-size: 0.75rem; }
+  .reject-note { width: 80px; font-size: 0.72rem; }
+  .text-pre { max-width: 180px; display: inline-block; }
 }
 
 @media (max-width: 480px) {
   body { font-size: 0.9rem; }
-  .container { margin: 0.5rem 0.25rem; padding: 0.75rem; }
-  .type-tab { font-size: 0.72rem; padding: 6px 2px; }
-  .queue-table { font-size: 0.72rem; }
-  .queue-table th, .queue-table td { padding: 4px 2px; }
+  .container { margin: 0; padding: 0.5rem; }
+  h1 { font-size: 1.1rem; }
+  .type-tab { font-size: 0.68rem; padding: 6px 2px; min-width: 50px; }
+  .stat { padding: 5px 8px; font-size: 0.72rem; }
+  .stat b { font-size: 1rem; }
+
+  .queue-table { font-size: 0.7rem; min-width: 550px; }
+  .queue-table th, .queue-table td { padding: 4px 3px; }
+  .btn-sm { padding: 4px 8px; font-size: 0.7rem; margin: 1px; }
+  .reject-note { width: 60px; font-size: 0.65rem; }
+  .text-pre { max-width: 130px; display: inline-block; }
 }

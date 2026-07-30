@@ -4,36 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>管理者パネル - 匿名ツイート代行</title>
-<link rel="stylesheet" href="/static/style.css?v=6">
-<style>
-.queue-table { width:100%; border-collapse:collapse; margin-top:1rem; font-size:0.9rem; }
-.queue-table th, .queue-table td { padding:6px 10px; border-bottom:1px solid #333; text-align:left; vertical-align:top; }
-.queue-table th { background:#1a1a1a; position:sticky; top:0; white-space:nowrap; }
-.queue-table tr:hover { background:#1a1a1a; }
-.queue-table td { word-break:break-word; }
-/* Narrow columns: prevent wrapping */
-.queue-table th:nth-child(1),
-.queue-table td:nth-child(1) { white-space:nowrap; width:1%; }
-.queue-table th:nth-child(2),
-.queue-table td:nth-child(2) { white-space:nowrap; width:1%; }
-.queue-table th:nth-child(5),
-.queue-table td:nth-child(5) { white-space:nowrap; width:1%; }
-.status-pending { color:#f0c040; }
-.status-approved { color:#40c040; }
-.status-rejected { color:#c04040; }
-.status-posted { color:#40a0ff; }
-.status-failed { color:#ff6040; }
-.btn-sm { padding:4px 10px; font-size:0.8rem; display:inline-block; margin:2px; }
-.btn-approve { background:#1a5c1a; color:#4f4; }
-.btn-reject { background:#5c1a1a; color:#f44; }
-.btn-reset { background:#5c5c1a; color:#ff4; }
-.text-pre { white-space:pre-wrap; word-break:break-all; max-width:250px; display:inline-block; }
-.reject-form { display:inline; }
-.reject-note { width:120px; padding:4px; background:#111; color:#ccc; border:1px solid #444; font-size:0.8rem; }
-.stats { display:flex; gap:1rem; margin:1rem 0; flex-wrap:wrap; }
-.stat { background:#1a1a1a; padding:8px 16px; border-radius:6px; }
-.stat b { font-size:1.3rem; }
-</style>
+<link rel="stylesheet" href="/static/style.css?v=7">
 </head>
 <body>
 <div class="container">
