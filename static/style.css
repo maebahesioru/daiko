@@ -223,3 +223,86 @@ a:hover { color: #8cf; }
 .thread-block textarea { font-size: 0.9rem; }
 .small-label { font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 2px; }
 .checkbox-label.small { font-size: 0.85rem; }
+
+/* --- Onion URL wrapping --- */
+.clearnet-warning a {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+/* --- Admin table --- */
+.queue-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.queue-table th, .queue-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #2a2a4e;
+  vertical-align: top;
+}
+.queue-table th {
+  text-align: left;
+  color: #aaa;
+  background: #111;
+  position: sticky;
+  top: 0;
+  white-space: nowrap;
+}
+.queue-table tr:hover { background: #1a1a2e; }
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+}
+.btn-approve { background: #2a6a2a; color: #cfc; }
+.btn-approve:hover { background: #3a7a3a; }
+.btn-reject { background: #6a2a2a; color: #fcc; }
+.btn-reject:hover { background: #7a3a3a; }
+.btn-reset { background: #4a4a1a; color: #ffc; }
+.btn-reset:hover { background: #5a5a2a; }
+
+.reject-form { display: inline-flex; gap: 4px; align-items: center; }
+.reject-note {
+  padding: 4px 6px; font-size: 0.75rem; width: 100px;
+  background: #111; color: #aaa; border: 1px solid #333; border-radius: 4px;
+}
+
+.status-pending { color: #f0a030; }
+.status-approved { color: #4af; }
+.status-posted { color: #4f4; }
+.status-rejected { color: #f55; }
+.status-failed { color: #f55; }
+
+.text-pre { white-space: pre-wrap; word-break: break-word; }
+
+/* --- Mobile responsive --- */
+@media (max-width: 768px) {
+  .container { margin: 1rem 0.5rem; padding: 1rem; }
+  h1 { font-size: 1.2rem; }
+  .type-tab { font-size: 0.78rem; padding: 8px 4px; }
+
+  /* Table scroll */
+  .queue-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+  .queue-table { font-size: 0.78rem; }
+  .queue-table th, .queue-table td { padding: 6px 4px; }
+
+  .btn-sm { padding: 3px 8px; font-size: 0.72rem; }
+  .reject-note { width: 70px; font-size: 0.7rem; }
+}
+
+@media (max-width: 480px) {
+  body { font-size: 0.9rem; }
+  .container { margin: 0.5rem 0.25rem; padding: 0.75rem; }
+  .type-tab { font-size: 0.72rem; padding: 6px 2px; }
+  .queue-table { font-size: 0.72rem; }
+  .queue-table th, .queue-table td { padding: 4px 2px; }
+}

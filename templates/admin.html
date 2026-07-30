@@ -62,6 +62,7 @@
 <div class="stat">❌ 却下 <b>{{ rejected|length }}</b></div>
 </div>
 
+<div class="queue-table-wrapper">
 <table class="queue-table">
 <thead>
 <tr>
@@ -156,6 +157,7 @@
 {% endfor %}
 </tbody>
 </table>
+</div>
 
 {% if not submissions %}
 <p>投稿はまだありません。</p>
