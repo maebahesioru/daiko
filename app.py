@@ -489,7 +489,10 @@ def admin_media(filename: str):
     path = os.path.join(UPLOAD_DIR, safe)
     if not os.path.exists(path):
         abort(404)
-    return send_from_directory(UPLOAD_DIR, safe, as_attachment=False)
+    resp = make_response(send_from_directory(UPLOAD_DIR, safe, as_attachment=False))
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    return resp
 
 
 # ============================================================
