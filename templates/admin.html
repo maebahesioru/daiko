@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>管理者パネル - 匿名ツイート代行</title>
-<link rel="stylesheet" href="/static/style.css?v=7">
+<link rel="stylesheet" href="/static/style.css?v=8">
 </head>
 <body>
 <div class="container">
@@ -67,13 +67,18 @@
 <span class="text-pre">{{ s.content[:150]|linkify }}{% if s.content|length > 150 %}...{% endif %}</span><br>
 {% endif %}
 {% if s.media_file and s.media_file != '[]' %}
-📎
 {% set _raw = s.media_file|parse_json %}
-{% for _mf in _raw[:3] %}
+<div class="admin-media">
+{% for _mf in _raw[:4] %}
 {% set _fn = _mf.file if _mf is mapping else _mf %}
-<small>{{ _fn.split('_',1)[1] if '_' in _fn else _fn }}</small>{% if not loop.last %}, {% endif %}
+{% set _ext = _fn.rsplit('.',1)[-1]|lower if '.' in _fn else '' %}
+{% if _ext in ['mp4','mov','webm'] %}
+<video controls preload="metadata" src="/admin/media/{{ _fn }}"></video>
+{% else %}
+<a href="/admin/media/{{ _fn }}" target="_blank"><img loading="lazy" src="/admin/media/{{ _fn }}" alt="media"></a>
+{% endif %}
 {% endfor %}
-{% if _raw|length > 3 %}<small> 他{{ _raw|length - 3 }}件</small>{% endif %}<br>
+</div>
 {% endif %}
 {% if s.target_tweet_url %}
 <small><a href="{{ s.target_tweet_url }}">対象ツイート</a></small>

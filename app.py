@@ -19,7 +19,7 @@ import re
 import uuid
 from datetime import datetime, timezone
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response
+from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response, send_from_directory, abort
 
 from config import SECRET_KEY, ADMIN_PASSWORD, HOST, PORT, UPLOAD_DIR, ALLOWED_EXTENSIONS, MAX_UPLOAD_SIZE
 from models import init_db, SessionLocal, Submission
@@ -476,6 +476,20 @@ def admin_reset(sub_id: int):
     finally:
         db.close()
     return redirect(url_for("admin_queue"))
+
+
+@app.route("/admin/media/<path:filename>")
+def admin_media(filename: str):
+    """Serve uploaded media for admin preview (auth required)."""
+    check = _admin_required()
+    if check:
+        return check
+    # Prevent path traversal
+    safe = os.path.basename(filename)
+    path = os.path.join(UPLOAD_DIR, safe)
+    if not os.path.exists(path):
+        abort(404)
+    return send_from_directory(UPLOAD_DIR, safe, as_attachment=False)
 
 
 # ============================================================
