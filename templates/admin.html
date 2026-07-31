@@ -73,9 +73,9 @@
 {% set _fn = _mf.file if _mf is mapping else _mf %}
 {% set _ext = _fn.rsplit('.',1)[-1]|lower if '.' in _fn else '' %}
 {% if _ext in ['mp4','mov','webm'] %}
-<video controls preload="metadata" src="/admin/media/{{ _fn }}"></video>
+<video controls preload="metadata" src="/admin/media/{{ _fn }}?v=1"></video>
 {% else %}
-<a href="/admin/media/{{ _fn }}" target="_blank"><img loading="lazy" src="/admin/media/{{ _fn }}" alt="media"></a>
+<a href="/admin/media/{{ _fn }}" target="_blank"><img loading="lazy" src="/admin/media/{{ _fn }}?v=1" alt="media"></a>
 {% endif %}
 {% endfor %}
 </div>
