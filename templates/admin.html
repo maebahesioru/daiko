@@ -123,7 +123,7 @@
 <input type="text" name="note" class="reject-note" placeholder="却下理由（任意）">
 <button class="btn-sm btn-reject">却下</button>
 </form>
-{% elif s.status == 'failed' or s.status == 'rejected' %}
+{% elif s.status == 'failed' or s.status == 'rejected' or s.status == 'approved' %}
 <form method="POST" action="/admin/reset/{{ s.id }}" style="display:inline;">
 <button class="btn-sm btn-reset">再審査に戻す</button>
 </form>
