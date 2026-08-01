@@ -4,6 +4,7 @@ Never calls login() — uses browser cookies to avoid account lockouts.
 """
 import os
 import json
+import asyncio
 import logging
 from config import COOKIES_FILE, UPLOAD_DIR
 
@@ -64,13 +65,29 @@ class TwitterClient:
         if self._client is not None:
             return self._client
         from twikit import Client
-        client = Client(language="ja")
-        cookies = _load_cookies_as_dict()
-        client.set_cookies(cookies)
-        uid = await client.user_id()
-        log.info("Twitter auth OK — user_id=%s", uid)
-        self._client = client
-        return client
+        # Retry client creation — x.com sometimes returns 302/consent pages
+        # which make twikit's client_transaction fail with KEY_BYTE indices error.
+        last_err = None
+        for attempt in range(3):
+            try:
+                client = Client(language="ja")
+                cookies = _load_cookies_as_dict()
+                client.set_cookies(cookies)
+                uid = await client.user_id()
+                log.info("Twitter auth OK — user_id=%s", uid)
+                self._client = client
+                return client
+            except Exception as e:
+                last_err = e
+                log.warning("Client auth attempt %d failed: %s", attempt + 1, e)
+                await asyncio.sleep(5 * (attempt + 1))
+        raise last_err or RuntimeError("Failed to create Twitter client")
+
+    async def invalidate_client(self):
+        """Drop cached client so next call re-auths (for transient twikit failures)."""
+        if self._client is not None:
+            self._client = None
+            log.info("Twitter client invalidated")
 
     async def _upload_media(self, filename: str) -> str | None:
         """Upload a media file. Returns media_id or None if no file.

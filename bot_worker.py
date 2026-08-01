@@ -80,27 +80,57 @@ class BotWorker:
                 sub.result_tweet_id = result.get("tweet_id", "")
                 sub.result_tweet_url = result.get("tweet_url", "")
                 log.info("Submission #%d posted: %s", sub.id, sub.result_tweet_url)
-                # Clean up media files if still present
-                if sub.media_file:
-                    import os, json as _json2
-                    from config import UPLOAD_DIR
-                    fnames = _json2.loads(sub.media_file) if sub.media_file.startswith("[") else [sub.media_file]
-                    for item in fnames:
-                        fname = item.get("file", item) if isinstance(item, dict) else item
-                        path = os.path.join(UPLOAD_DIR, fname)
-                        if os.path.exists(path):
-                            os.remove(path)
-                            log.info("Cleaned up media file: %s", fname)
+                await self._cleanup_media(sub)
             except Exception as e:
-                sub.status = "failed"
-                sub.error_message = str(e)[:500]
-                log.exception("Submission #%d failed: %s", sub.id, e)
+                err_str = str(e)
+                # Transient errors: retry a few times before marking failed
+                transient = any(k in err_str for k in (
+                    "KEY_BYTE", "Event loop is closed", "Connection reset",
+                    "timeout", "Timeout", "429", "Too Many", "502", "503"
+                ))
+                if transient:
+                    for attempt in range(3):
+                        log.warning("Submission #%d transient error (attempt %d/3): %s", sub.id, attempt + 1, err_str[:200])
+                        await asyncio.sleep(20)
+                        try:
+                            result = await self._execute(sub)
+                            sub.status = "posted"
+                            sub.posted_at = datetime.now(timezone.utc)
+                            sub.result_tweet_id = result.get("tweet_id", "")
+                            sub.result_tweet_url = result.get("tweet_url", "")
+                            log.info("Submission #%d posted (retry %d): %s", sub.id, attempt + 1, sub.result_tweet_url)
+                            await self._cleanup_media(sub)
+                            break
+                        except Exception as e2:
+                            err_str = str(e2)
+                    else:
+                        sub.status = "failed"
+                        sub.error_message = err_str[:500]
+                        log.exception("Submission #%d failed after retries: %s", sub.id, err_str)
+                else:
+                    sub.status = "failed"
+                    sub.error_message = err_str[:500]
+                    log.exception("Submission #%d failed: %s", sub.id, err_str)
 
             db.commit()
             self._last_post_time = time.monotonic()
 
         finally:
             db.close()
+
+    async def _cleanup_media(self, sub):
+        """Delete media files after successful post (keep on failure for retry)."""
+        if not sub.media_file:
+            return
+        import os, json as _json2
+        from config import UPLOAD_DIR
+        fnames = _json2.loads(sub.media_file) if sub.media_file.startswith("[") else [sub.media_file]
+        for item in fnames:
+            fname = item.get("file", item) if isinstance(item, dict) else item
+            path = os.path.join(UPLOAD_DIR, fname)
+            if os.path.exists(path):
+                os.remove(path)
+                log.info("Cleaned up media file: %s", fname)
 
     async def _execute(self, sub: Submission) -> dict:
         import json as _json
