@@ -111,6 +111,26 @@ class TwitterClient:
         log.info("Media uploaded: %s -> %s", filename, media_id)
         return media_id
 
+    async def _recover_duplicate(self, client, text: str) -> dict | None:
+        """Find an already-posted tweet with identical text (duplicate 187 recovery).
+        Returns {tweet_id, tweet_url} if found, None otherwise."""
+        try:
+            uid = await client.user_id()
+            me = await client.get_user_by_id(uid)
+            # Fetch our recent tweets and look for exact text match
+            tweets = await client.get_user_tweets(uid, "Tweets", count=20)
+            for tw in tweets:
+                if tw.text and tw.text.strip() == text.strip():
+                    author = getattr(tw, "user", None)
+                    sn = getattr(author, "screen_name", me.screen_name)
+                    url = f"https://x.com/{sn}/status/{tw.id}"
+                    log.info("Duplicate recovered: %s", url)
+                    return {"tweet_id": tw.id, "tweet_url": url}
+            log.warning("Duplicate error but no matching tweet found in last 20")
+        except Exception as e:
+            log.warning("Duplicate recovery search failed: %s", e)
+        return None
+
     async def post_tweet(self, text: str, media_filenames: str = "[]",
                           poll_choices: list[str] | None = None,
                           poll_duration: int = 0) -> dict:
@@ -125,9 +145,16 @@ class TwitterClient:
                 mid = await self._upload_media(fname)
                 if mid:
                     media_ids.append(mid)
-        tweet = await client.create_tweet(
-            text=text, media_ids=media_ids or None, poll_uri=poll_uri
-        )
+        try:
+            tweet = await client.create_tweet(
+                text=text, media_ids=media_ids or None, poll_uri=poll_uri
+            )
+        except Exception as e:
+            if "duplicate" in str(e).lower() or "187" in str(e):
+                recovered = await self._recover_duplicate(client, text)
+                if recovered:
+                    return recovered
+            raise
         tid = tweet.id
         author = tweet.user.screen_name
         url = f"https://x.com/{author}/status/{tid}"
@@ -152,10 +179,17 @@ class TwitterClient:
                 mid = await self._upload_media(fname)
                 if mid:
                     media_ids.append(mid)
-        tweet = await client.create_tweet(
-            text=text, reply_to=reply_to_tweet_id, media_ids=media_ids or None,
-            poll_uri=poll_uri
-        )
+        try:
+            tweet = await client.create_tweet(
+                text=text, reply_to=reply_to_tweet_id, media_ids=media_ids or None,
+                poll_uri=poll_uri
+            )
+        except Exception as e:
+            if "duplicate" in str(e).lower() or "187" in str(e):
+                recovered = await self._recover_duplicate(client, text)
+                if recovered:
+                    return recovered
+            raise
         tid = tweet.id
         author = tweet.user.screen_name
         url = f"https://x.com/{author}/status/{tid}"

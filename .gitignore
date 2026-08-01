@@ -4,3 +4,12 @@ data/
 __pycache__/
 *.pyc
 *.db
+
+# junk test files
+_tmp_*
+_tmp*.txt
+.tmp_*
+_test_*.py
+_hls_*.aac
+_*s_death.log
+_chunkfind*.py
