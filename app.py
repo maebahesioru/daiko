@@ -302,6 +302,7 @@ def submit():
             poll_choices=poll_choices_json,
             poll_duration=poll_duration,
             thread_items=thread_items_json,
+            internal_note=request.form.get("internal_note", "").strip()[:500],
             status="pending",
         )
         db.add(sub)

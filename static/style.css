@@ -292,6 +292,12 @@ a:hover { color: #8cf; }
 
 .text-pre { white-space: pre-wrap; word-break: break-word; }
 
+.internal-note {
+  margin-top: 4px; padding: 4px 8px; font-size: 0.8rem;
+  background: #2a2a1a; border: 1px solid #5a5a2a; border-radius: 4px;
+  color: #e0d080; white-space: pre-wrap; word-break: break-word;
+}
+
 .admin-media { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .admin-media img {
   max-width: 120px; max-height: 90px; object-fit: cover;

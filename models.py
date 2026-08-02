@@ -28,6 +28,7 @@ class Submission(Base):
     reviewed_at = Column(DateTime, nullable=True)
     posted_at = Column(DateTime, nullable=True)
     admin_note = Column(Text, default="")
+    internal_note = Column(Text, default="")   # submitter→admin internal message (never posted)
     error_message = Column(Text, default="")
     result_tweet_id = Column(String(64), default="")
     result_tweet_url = Column(Text, default="")

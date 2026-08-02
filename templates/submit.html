@@ -93,6 +93,9 @@
 </label>
 {% endif %}
 
+<label for="internal_note">📋 管理者へのメモ <span class="hint">（任意 / ツイートには含まれません・管理者にだけ見えます）</span></label>
+<textarea name="internal_note" id="internal_note" rows="2" placeholder="例: この投稿は緊急なので早めに承認してほしい / この文言だけは変えないでほしい など"></textarea>
+
 {% if selected_type in ('tweet', 'reply', 'quote') %}
 <div class="thread-section">
   <div class="thread-bar">
