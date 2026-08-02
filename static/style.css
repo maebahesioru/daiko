@@ -298,6 +298,16 @@ a:hover { color: #8cf; }
   color: #e0d080; white-space: pre-wrap; word-break: break-word;
 }
 
+.pin-box {
+  background: #1a2a1a; border: 1px solid #3a5a3a; border-radius: 8px;
+  padding: 1.2rem; margin: 1rem 0;
+}
+.pin-display {
+  font-size: 2.5rem; font-weight: bold; letter-spacing: 0.5em;
+  color: #4f4; text-align: center; margin: 0.8rem 0;
+  font-family: "Courier New", monospace;
+}
+
 .admin-media { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .admin-media img {
   max-width: 120px; max-height: 90px; object-fit: cover;

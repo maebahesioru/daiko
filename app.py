@@ -16,6 +16,7 @@ import logging
 import json
 import os
 import re
+import random
 import uuid
 from datetime import datetime, timezone
 
@@ -303,6 +304,7 @@ def submit():
             poll_duration=poll_duration,
             thread_items=thread_items_json,
             internal_note=request.form.get("internal_note", "").strip()[:500],
+            edit_pin=f"{random.randint(0, 9999):04d}",
             status="pending",
         )
         db.add(sub)
@@ -310,7 +312,7 @@ def submit():
         sub_id = sub.id
 
         log.info("New submission #%d type=%s", sub_id, submit_type)
-        resp = make_response(render_template("submitted.html", submission_id=sub_id))
+        resp = make_response(render_template("submitted.html", submission_id=sub_id, edit_pin=sub.edit_pin))
         return _noindex(resp)
 
     except Exception as e:
@@ -331,6 +333,79 @@ def check_status(sub_id: int):
             resp = make_response(render_template("status.html", found=False))
         else:
             resp = make_response(render_template("status.html", found=True, submission=sub))
+        return _noindex(resp)
+    finally:
+        db.close()
+
+
+# ============================================================
+# Edit (PIN-protected)
+# ============================================================
+
+@app.route("/edit/<int:sub_id>", methods=["GET", "POST"])
+def edit_submission(sub_id: int):
+    """Edit a pending submission using the 4-digit PIN shown at submit time."""
+    db = SessionLocal()
+    try:
+        sub = db.query(Submission).filter(Submission.id == sub_id).first()
+        if not sub:
+            resp = make_response(render_template("edit.html", found=False))
+            return _noindex(resp)
+
+        # GET: show PIN prompt
+        if request.method == "GET":
+            resp = make_response(render_template(
+                "edit.html", found=True, sub=sub, verified=False,
+                error=None))
+            return _noindex(resp)
+
+        # POST: verify PIN, then apply edits
+        pin = request.form.get("pin", "").strip()
+        if not pin or pin != sub.edit_pin:
+            resp = make_response(render_template(
+                "edit.html", found=True, sub=sub, verified=False,
+                error="PINが違います"))
+            return _noindex(resp)
+
+        if sub.status != "pending":
+            resp = make_response(render_template(
+                "edit.html", found=True, sub=sub, verified=False,
+                error="承認済み/投稿済みの投稿は編集できません（承認前のみ）"))
+            return _noindex(resp)
+
+        # Apply editable fields
+        new_content = request.form.get("content", "").strip()
+        new_target = request.form.get("target_url", "").strip()
+        new_note = request.form.get("internal_note", "").strip()[:500]
+        like = 1 if request.form.get("like_original") == "1" else 0
+
+        if sub.submit_type in ("tweet", "reply", "quote") and not new_content:
+            resp = make_response(render_template(
+                "edit.html", found=True, sub=sub, verified=True,
+                error="本文を入力してください"))
+            return _noindex(resp)
+
+        sub.content = new_content
+        sub.like_original = like
+        sub.internal_note = new_note
+
+        if sub.submit_type in ("retweet", "reply", "quote"):
+            tid = _parse_tweet_id(new_target)
+            if not tid:
+                resp = make_response(render_template(
+                    "edit.html", found=True, sub=sub, verified=True,
+                    error="対象ツイートURLを入力してください"))
+                return _noindex(resp)
+            sub.target_tweet_id = tid
+            sub.target_tweet_url = new_target
+
+        # Reset review state so it goes back to the queue head
+        sub.status = "pending"
+        sub.reviewed_at = None
+        sub.error_message = ""
+        db.commit()
+        log.info("Submission #%d EDITED via PIN", sub_id)
+        resp = make_response(render_template("edit.html", found=True, sub=sub, verified=True, saved=True, error=None))
         return _noindex(resp)
     finally:
         db.close()

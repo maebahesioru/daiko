@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>投稿の編集 - 匿名ツイート代行</title>
+<link rel="stylesheet" href="/static/style.css?v=11">
+</head>
+<body>
+<div class="container">
+<h1>✏️ 投稿の編集</h1>
+
+{% if not found %}
+<p>投稿が見つかりません。</p>
+<a href="/" class="btn">戻る</a>
+
+{% elif not verified %}
+{% if error %}<div class="error-msg">{{ error }}</div>{% endif %}
+<form method="POST" action="/edit/{{ sub.id }}">
+<label for="pin">🔑 編集用PIN（4桁）</label>
+<input type="text" name="pin" id="pin" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" placeholder="0000" required>
+<button type="submit">PINでロック解除</button>
+</form>
+<p class="note">※ 送信完了画面に表示された4桁のPINを入力してください。</p>
+<a href="/status/{{ sub.id }}">状態を確認する</a>
+
+{% elif saved %}
+<div class="flash flash-success">✅ 編集を保存しました。再び審査キューに並んでいます。</div>
+<p>投稿ID: <strong>#{{ sub.id }}</strong></p>
+<div class="status-link"><a href="/status/{{ sub.id }}">/status/{{ sub.id }}</a></div>
+<a href="/" class="btn">新しい投稿をする</a>
+<a href="/edit/{{ sub.id }}" class="btn">さらに編集する</a>
+
+{% else %}
+{% if error %}<div class="error-msg">{{ error }}</div>{% endif %}
+<form method="POST" action="/edit/{{ sub.id }}">
+<input type="hidden" name="pin" value="{{ sub.edit_pin }}">
+<input type="hidden" name="type" value="{{ sub.submit_type }}">
+
+<p>投稿ID: <strong>#{{ sub.id }}</strong> / 種別:
+{% if sub.submit_type == 'tweet' %}📝 ツイート
+{% elif sub.submit_type == 'retweet' %}🔄 リツイート
+{% elif sub.submit_type == 'reply' %}💬 リプライ
+{% elif sub.submit_type == 'quote' %}💬 引用
+{% endif %}
+</p>
+
+{% if sub.submit_type in ('tweet', 'reply', 'quote') %}
+<label for="content">投稿内容</label>
+<textarea name="content" id="content" rows="4">{{ sub.content }}</textarea>
+{% endif %}
+
+{% if sub.submit_type in ('retweet', 'reply', 'quote') %}
+<label for="target_url">対象ツイートURL</label>
+<input type="url" name="target_url" id="target_url" value="{{ sub.target_tweet_url }}" placeholder="https://x.com/user/status/123456...">
+{% endif %}
+
+{% if sub.submit_type in ('retweet', 'reply', 'quote') %}
+<label class="checkbox-label">
+<input type="checkbox" name="like_original" value="1" {% if sub.like_original %}checked{% endif %}>
+元ツイートに「いいね」も付ける
+</label>
+{% endif %}
+
+<label for="internal_note">📋 管理者へのメモ（ツイートには含まれません）</label>
+<textarea name="internal_note" id="internal_note" rows="2">{{ sub.internal_note }}</textarea>
+
+<p class="note">※ 画像・動画・投票・スレッドは編集できません。変更したい場合は削除して再投稿してください。</p>
+<button type="submit">💾 保存して再審査に出す</button>
+</form>
+{% endif %}
+
+</div>
+</body>
+</html>

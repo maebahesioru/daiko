@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>送信完了 - 匿名ツイート代行</title>
-<link rel="stylesheet" href="/static/style.css?v=10">
+<link rel="stylesheet" href="/static/style.css?v=11">
 </head>
 <body>
 <div class="container">
@@ -14,6 +14,16 @@
 <div class="status-link">
 <a href="/status/{{ submission_id }}">/status/{{ submission_id }}</a>
 </div>
+{% if edit_pin %}
+<div class="pin-box">
+<h2>🔑 編集用PIN</h2>
+<p>この投稿を編集するための4桁の暗証番号です：</p>
+<div class="pin-display">{{ edit_pin }}</div>
+<p class="note">※ PINと投稿IDはメモしておいてください。管理者にも見えません。<br>
+編集できるのは<strong>承認前</strong>のみです。</p>
+<a href="/edit/{{ submission_id }}" class="btn">▶ この投稿を編集する</a>
+</div>
+{% endif %}
 <p class="note">※ このIDをメモしておいてください。匿名のため、IDがないと状態確認できません。</p>
 <a href="/" class="btn">もう一度送信</a>
 </div>
