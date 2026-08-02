@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, func
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, func, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from datetime import datetime, timezone
 from config import DATABASE_FILE
@@ -40,6 +40,21 @@ SessionLocal = sessionmaker(bind=engine)
 
 def init_db():
     Base.metadata.create_all(engine)
+    _migrate()
+
+
+def _migrate():
+    """Add columns missing from older databases (create_all doesn't alter tables)."""
+    with engine.connect() as conn:
+        cols = {r[1] for r in conn.execute(text("PRAGMA table_info(submissions)"))}
+        additions = {
+            "internal_note": "ALTER TABLE submissions ADD COLUMN internal_note TEXT DEFAULT ''",
+            "edit_pin": "ALTER TABLE submissions ADD COLUMN edit_pin VARCHAR(4) DEFAULT ''",
+        }
+        for name, sql in additions.items():
+            if name not in cols:
+                conn.execute(text(sql))
+        conn.commit()
 
 
 def get_db():
