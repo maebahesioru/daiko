@@ -20,3 +20,5 @@ mullvad/server_pubkey.txt
 mullvad/wg0_server.conf
 mullvad/relays.json
 mullvad/
+platforms/.tuber_jar*
+cjar.txt
