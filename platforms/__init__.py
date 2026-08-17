@@ -58,7 +58,7 @@ def _load_platforms():
 
     for pid, module, cls in (
         ("sukikirai", "sukikirai", "SukikiraiPlatform"),
-        ("yoron", "yoron", "YoronPlatform"),
+        ("yoron", "yoron", "TuberPlatform"),
         ("nico", "nico", "NicoPlatform"),
         ("pixiv", "pixiv", "PixivPlatform"),
     ):
