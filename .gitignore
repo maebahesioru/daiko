@@ -13,3 +13,10 @@ _test_*.py
 _hls_*.aac
 _*s_death.log
 _chunkfind*.py
+
+# Mullvad VPN keys (SECRET - never commit)
+mullvad/server_private.key
+mullvad/server_pubkey.txt
+mullvad/wg0_server.conf
+mullvad/relays.json
+mullvad/

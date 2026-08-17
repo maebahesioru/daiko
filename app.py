@@ -156,10 +156,24 @@ def index():
         selected = "tweet"
     show_poll = request.args.get("poll") == "1" and selected in ("tweet", "reply")
     thread_count = max(0, min(4, int(request.args.get("thread", "0") or 0)))
+    # Platform selector (from platforms registry, Mark: which have adapters)
+    from platforms import available_platforms
+    from platforms import get_adapter as _get_adapter
+    platform = request.args.get("platform", "twitter")
+    plats = []
+    for pid in available_platforms():
+        adapter = _get_adapter(pid)
+        plats.append({
+            "id": pid,
+            "label": getattr(adapter, "label", pid) if adapter else pid,
+            "enabled": adapter is not None,
+        })
+    if platform not in available_platforms():
+        platform = "twitter"
     resp = make_response(render_template("submit.html",
         is_onion=_is_onion(), selected_type=selected,
         onion_hostname=_onion_hostname, show_poll=show_poll,
-        thread_count=thread_count))
+        thread_count=thread_count, platforms=plats, selected_platform=platform))
     return _noindex(resp)
 
 
@@ -168,6 +182,10 @@ def submit():
     db = SessionLocal()
     try:
         submit_type = request.form.get("type", "tweet")
+        platform = request.form.get("platform", "twitter")
+        from platforms import available_platforms
+        if platform not in available_platforms():
+            platform = "twitter"
         content = request.form.get("content", "").strip()
         target_url = request.form.get("target_url", "").strip()
         like_original = 1 if request.form.get("like_original") == "1" else 0
@@ -294,6 +312,7 @@ def submit():
                 thread_items_json = json.dumps(thread_items, ensure_ascii=False)
 
         sub = Submission(
+            platform=platform,
             submit_type=submit_type,
             content=content,
             target_tweet_url=target_url,

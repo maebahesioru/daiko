@@ -10,6 +10,15 @@ DATABASE_FILE = os.path.join(DATA_DIR, "daiko.db")
 UPLOAD_DIR = os.path.join(DATA_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Per-platform cookie files (browser-exported JSON, same format as cookies.json)
+PLATFORM_COOKIES = {
+    "twitter": os.path.join(BASE_DIR, "cookies.json"),
+    "sukikirai": os.environ.get("SUKIKIRAI_COOKIES", os.path.join(BASE_DIR, "cookies_sukikirai.json")),
+    "yoron": os.environ.get("YORON_COOKIES", os.path.join(BASE_DIR, "cookies_yoron.json")),
+    "nico": os.environ.get("NICO_COOKIES", os.path.join(BASE_DIR, "cookies_nico.json")),
+    "pixiv": os.environ.get("PIXIV_COOKIES", os.path.join(BASE_DIR, "cookies_pixiv.json")),
+}
+
 # --- File Upload Limits ---
 MAX_UPLOAD_SIZE = int(os.environ.get("MAX_UPLOAD_SIZE", str(50 * 1024 * 1024)))  # 50MB
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp", "mp4", "mov"}

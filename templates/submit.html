@@ -37,8 +37,17 @@
 <a href="?type=quote" class="type-tab {% if selected_type == 'quote' %}active{% endif %}">💬 引用</a>
 </div>
 
+{% if platforms %}
+<div class="type-tabs" style="margin-top:8px;">
+{% for p in platforms %}
+<a href="?platform={{ p.id }}" class="type-tab {% if selected_platform == p.id %}active{% endif %}" {% if not p.enabled %}title="未設定"{% endif %}>{{ p.label }}</a>
+{% endfor %}
+</div>
+{% endif %}
+
 <form method="POST" action="/submit" enctype="multipart/form-data">
 <input type="hidden" name="type" value="{{ selected_type }}">
+<input type="hidden" name="platform" value="{{ selected_platform }}">
 <input type="hidden" name="thread_count" id="thread_count" value="{{ thread_count }}">
 
 {% if selected_type != 'retweet' %}

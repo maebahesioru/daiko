@@ -14,6 +14,7 @@ class Submission(Base):
     __tablename__ = "submissions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    platform = Column(String(20), default="twitter")  # twitter, sukikirai, nico, pixiv, yoron
     submit_type = Column(String(10), nullable=False)   # 'tweet', 'retweet', 'reply'
     content = Column(Text, default="")                  # tweet text
     target_tweet_url = Column(Text, default="")         # original tweet URL for RT/reply
@@ -50,6 +51,7 @@ def _migrate():
         additions = {
             "internal_note": "ALTER TABLE submissions ADD COLUMN internal_note TEXT DEFAULT ''",
             "edit_pin": "ALTER TABLE submissions ADD COLUMN edit_pin VARCHAR(4) DEFAULT ''",
+            "platform": "ALTER TABLE submissions ADD COLUMN platform VARCHAR(20) DEFAULT 'twitter'",
         }
         for name, sql in additions.items():
             if name not in cols:

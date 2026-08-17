@@ -49,7 +49,7 @@
 <tbody>
 {% for s in submissions %}
 <tr>
-<td>#{{ s.id }}</td>
+<td>#{{ s.id }}<br><small class="platform-badge">{{ s.platform or 'twitter' }}</small></td>
 <td>
 {% if s.submit_type == 'tweet' %}📝ツイート
 {% elif s.submit_type == 'retweet' %}🔄RT
