@@ -106,14 +106,18 @@ class TuberPlatform:
         if not token:
             raise RuntimeError("tuber-review: CSRFトークンを取得できません")
 
-        # 2) confirm POST (body returned so we can detect the store form)
+        # 2) Build fields from optional extra data (name/sex/age/ratings)
+        extra = self._extra(sub)
+
+        # 3) confirm POST (body returned so we can detect the store form)
         fields = [
-            ("_token", token), ("commentator", self._commentator(sub)),
-            ("sex", self._sex_value(sub)), ("age", str(self._age_value(sub))),
+            ("_token", token), ("commentator", extra.get("name", "")),
+            ("sex", extra.get("sex", "")), ("age", str(extra.get("age", ""))),
             ("content", content), ("entry_id", entry_id), ("duplicationCount", ""),
         ]
+        ratings = extra.get("ratings", {})
         for i in range(1, 11):
-            fields.append((f"rating_scores[{i}]", "0"))
+            fields.append((f"rating_scores[{i}]", str(ratings.get(str(i), 0))))
         conf_html = self._request(
             f"{self._BASE}/comments/confirm",
             data=dict(fields),
@@ -121,7 +125,7 @@ class TuberPlatform:
         if "/comments/store" not in conf_html:
             raise RuntimeError("tuber-review: 確認ページに遷移しませんでした")
 
-        # 3) store POST (resend all)
+        # 4) store POST (resend all)
         try:
             self._request(
                 f"{self._BASE}/comments/store",
@@ -133,6 +137,30 @@ class TuberPlatform:
         url = f"{self._BASE}/youtubers/{entry_id}"
         log.info("tuber-review store ok url=%s", url)
         return {"tweet_id": entry_id, "tweet_url": url}
+
+    def _extra(self, sub):
+        """Parse poll_choices JSON (name/sex/age/ratings) if present."""
+        raw = (getattr(sub, "poll_choices", "") or "").strip()
+        if raw.startswith("{"):
+            try:
+                d = json.loads(raw)
+                if isinstance(d, dict):
+                    return {
+                        "name": str(d.get("name", "") or "")[:20],
+                        "sex": str(d.get("sex", "") or ""),
+                        "age": str(d.get("age", "") or ""),
+                        "ratings": d.get("ratings", {}) if isinstance(d.get("ratings"), dict) else {},
+                    }
+            except Exception:
+                pass
+        # Fallback: legacy internal_note parsing
+        note = (getattr(sub, "internal_note", "") or "")
+        return {
+            "name": "",
+            "sex": "female" if "女性" in note else ("male" if "男性" in note else ""),
+            "age": (re.search(r"(10|20|30|40|50|60|70)代", note) or [None, ""])[1],
+            "ratings": {},
+        }
 
     def _extract_entry_id(self, sub):
         tid = (sub.target_tweet_id or "").strip()
@@ -186,19 +214,3 @@ class TuberPlatform:
             if len(out) >= limit:
                 break
         return out
-
-    def _commentator(self, sub):
-        return (getattr(sub, "poll_choices", "") or "").strip()[:20] or ""
-
-    def _sex_value(self, sub):
-        note = (getattr(sub, "internal_note", "") or "").lower()
-        if "女性" in note:
-            return "female"
-        if "男性" in note:
-            return "male"
-        return ""
-
-    def _age_value(self, sub):
-        note = (getattr(sub, "internal_note", "") or "")
-        m = re.search(r"(10|20|30|40|50|60|70)代", note)
-        return m.group(1) if m else ""

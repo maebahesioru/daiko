@@ -365,3 +365,9 @@ a:hover { color: #8cf; }
 .pick-name { font-weight: 600; }
 .pick-url { font-size: 0.75rem; color: #9ab; word-break: break-all; overflow-wrap: anywhere; }
 .flash-error { color: #ff8a80; }
+
+.extra-fields { border: 1px solid #2a3a5e; border-radius: 8px; padding: 12px; margin: 12px 0; background: #131a2e; }
+.extra-fields h3 { margin-top: 0; font-size: 1rem; color: #cfe0ff; }
+.extra-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.extra-row label { width: 110px; flex-shrink: 0; color: #b8c4dc; font-size: 0.9rem; }
+.extra-row select, .extra-row input[type=text] { flex: 1; min-width: 120px; }

@@ -231,6 +231,20 @@ def submit():
                 flash("* 投稿内容を入力してください", "error")
                 return redirect(url_for("index", platform=platform))
             sukikirai_type = request.form.get("type_value", "").strip()
+            # yoron: pack rating/name/sex/age as JSON into poll_choices
+            if platform == "yoron":
+                extra = {
+                    "name": request.form.get("y_name", "").strip()[:20],
+                    "sex": request.form.get("y_sex", "").strip(),
+                    "age": request.form.get("y_age", "").strip(),
+                    "ratings": {},
+                }
+                for idx in ("1", "2", "3", "4", "6", "7", "8", "9", "10"):
+                    v = request.form.get(f"y_r{idx}", "0").strip()
+                    extra["ratings"][idx] = int(v) if v.isdigit() else 0
+                poll_choices = json.dumps(extra, ensure_ascii=False)
+            else:
+                poll_choices = sukikirai_type
             sub = Submission(
                 platform=platform,
                 submit_type=submit_type,
@@ -239,7 +253,7 @@ def submit():
                 target_tweet_id=_parse_tweet_id(target_url) if target_url else "",
                 like_original=like_original,
                 media_file="[]",
-                poll_choices=sukikirai_type,
+                poll_choices=poll_choices,
                 poll_duration=0,
                 thread_items="",
                 internal_note=request.form.get("internal_note", "").strip()[:500],

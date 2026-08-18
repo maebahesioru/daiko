@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>匿名ツイート代行</title>
-<link rel="stylesheet" href="/static/style.css?v=12">
+<link rel="stylesheet" href="/static/style.css?v=13">
 </head>
 <body>
 <div class="container">
@@ -64,6 +64,52 @@
   <option value="嫌い" {% if preset_type == '嫌い' %}selected{% endif %}>😡 嫌い</option>
 </select>
 {% endif %}
+
+{% if selected_platform == 'yoron' %}
+<div class="extra-fields">
+<h3>📊 評価項目 <span class="hint">（すべて任意）</span></h3>
+<div class="extra-row">
+  <label for="y_name">名前</label>
+  <input type="text" name="y_name" id="y_name" placeholder="投稿者名（空=匿名）">
+</div>
+<div class="extra-row">
+  <label for="y_sex">性別</label>
+  <select name="y_sex" id="y_sex">
+    <option value="">無回答</option>
+    <option value="female">女性</option>
+    <option value="male">男性</option>
+  </select>
+</div>
+<div class="extra-row">
+  <label for="y_age">年齢</label>
+  <select name="y_age" id="y_age">
+    <option value="">無回答</option>
+    <option value="10">10代</option>
+    <option value="20">20代</option>
+    <option value="30">30代</option>
+    <option value="40">40代</option>
+    <option value="50">50代</option>
+    <option value="60">60代</option>
+    <option value="70">70代</option>
+  </select>
+</div>
+{% set ratings = [('1','総合評価'),('2','ルックス'),('3','トーク力'),('4','企画力'),('9','頭脳・知識'),('7','笑い、ユーモア'),('8','人間性'),('6','カリスマ性'),('10','好感度')] %}
+{% for idx, label in ratings %}
+<div class="extra-row">
+  <label for="y_r{{ idx }}">{{ label }}</label>
+  <select name="y_r{{ idx }}" id="y_r{{ idx }}">
+    <option value="0">評価しない</option>
+    <option value="1">1点</option>
+    <option value="2">2点</option>
+    <option value="3">3点</option>
+    <option value="4">4点</option>
+    <option value="5">5点</option>
+  </select>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
 <label for="content">投稿内容 <span class="hint">（コメント本文）</span></label>
 <textarea name="content" id="content" rows="4" placeholder="ここにコメント内容を入力..."></textarea>
 <label for="internal_note">📋 管理者へのメモ <span class="hint">（任意 / 公開されません）</span></label>
