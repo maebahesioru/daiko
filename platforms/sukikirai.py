@@ -62,9 +62,45 @@ class SukikiraiPlatform:
             return urllib.parse.unquote(m.group(1))
         return None
 
+    def _type_value(self, sub):
+        """Map submitted 好き/嫌い to the site's type value.
+        The comment form's type select uses option text 好き派/嫌い派."""
+        tv = (getattr(sub, "poll_choices", "") or "").strip()
+        if "嫌い" in tv:
+            return "嫌い派"
+        if "好き" in tv:
+            return "好き派"
+        return ""
+
     def _hidden(self, html, field):
         m = re.search(r'name="%s" value="([^"]*)"' % re.escape(field), html)
         return m.group(1) if m else ""
+
+    def search(self, q, limit=10):
+        """Search people. Returns list of {name, url} candidates."""
+        q = (q or "").strip()
+        if not q:
+            return []
+        d = self._flare("request.get",
+                        f"{self._BASE}/search?q={urllib.parse.quote(q)}")
+        html = (d.get("solution", {}) or {}).get("response") or ""
+        if not html:
+            return []
+        seen = set()
+        out = []
+        for m in re.finditer(r'href="(/people/vote/[^"]+)"[^>]*>\s*([^<]{1,60})', html):
+            url = m.group(1)
+            name1 = re.sub(r"\s+", " ", m.group(2)).strip()
+            if not name1 or name1.startswith("'"):
+                # fallback: decode from URL
+                name1 = urllib.parse.unquote(url.split("/people/vote/")[1])
+            if url in seen:
+                continue
+            seen.add(url)
+            out.append({"name": name1, "url": self._BASE + url})
+            if len(out) >= limit:
+                break
+        return out
 
     def _result_html(self, name):
         rurl = f"{self._BASE}/people/result/{urllib.parse.quote(name)}"
@@ -116,7 +152,7 @@ class SukikiraiPlatform:
         payload = {
             "id": self._hidden(html, "id"),
             "name_id": (getattr(sub, "poll_choices", "") or "").strip()[:50],
-            "type": "",
+            "type": self._type_value(sub),
             "url": self._hidden(html, "url"),
             "body": content,
             "sum": self._hidden(html, "sum"),

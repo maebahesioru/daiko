@@ -123,6 +123,57 @@ class TuberPlatform:
             return m.group(1)
         return None
 
+    def search(self, q, limit=10):
+        """Search youtubers. POST /search with q + csrf token.
+        Returns list of {name, url} candidates (real hits only)."""
+        q = (q or "").strip()
+        if not q:
+            return []
+        cwd = os.path.dirname(os.path.abspath(__file__))
+        # 1) session + csrf
+        html0 = self._run(["-L", self._BASE]).decode("utf-8", "ignore")
+        m = re.search(r'<meta name="csrf-token" content="([^"]+)"', html0)
+        token = m.group(1) if m else None
+        if not token:
+            return []
+        # 2) POST search
+        subprocess.run(
+            ["curl", "-s", "-m", "25", "-L", "-A", self._UA,
+             "-e", self._BASE, "-o", "search_res.html",
+             "--data-urlencode", f"q={q}", "--data-urlencode", f"_token={token}",
+             f"{self._BASE}/search"],
+            capture_output=True, timeout=40, cwd=cwd)
+        res = open(os.path.join(cwd, "search_res.html"),
+                   encoding="utf-8", errors="ignore").read()
+        out = []
+        seen = set()
+        # Real hits live inside "entry-list-item" blocks; each has a
+        # font-weight:600 <a href="/youtubers/<id>">NAME</a>.
+        for blk in re.finditer(r'<div class="entry-list-item".*?(?=<div class="entry-list-item"|$)', res, re.S):
+            seg = blk.group(0)
+            a = re.search(r'href="(https://tuber-review\.com/youtubers/\d+)"[^>]*>\s*([^<]{1,60})', seg)
+            if not a:
+                a = re.search(r'href="(https://tuber-review\.com/youtubers/\d+)[^"]*"[^>]*>', seg)
+            if not a:
+                continue
+            url = a.group(1)
+            name1 = a.group(2).strip() if len(a.groups()) > 1 and a.group(2) else ""
+            if not name1 or name1.count(" ") > 4:
+                # fall back to bold name inside block
+                b = re.search(r'font-weight:600">\s*([^<]{1,60})', seg)
+                if b:
+                    name1 = b.group(1).strip()
+            if not name1:
+                continue
+            key = (url, name1)
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append({"name": name1, "url": url})
+            if len(out) >= limit:
+                break
+        return out
+
     def _commentator(self, sub):
         return (getattr(sub, "poll_choices", "") or "").strip()[:20] or ""
 

@@ -354,3 +354,14 @@ a:hover { color: #8cf; }
   background: #1a2a4e; border: 1px solid #3a5a8e; border-radius: 3px;
   padding: 1px 5px; margin-top: 2px;
 }
+
+.search-form { display: flex; gap: 8px; margin: 1rem 0; }
+.search-form input[type=text] { flex: 1; min-width: 0; }
+.pick-results { display: flex; flex-direction: column; gap: 8px; margin-top: 1rem; }
+.pick-card { display: flex; justify-content: space-between; align-items: center;
+  gap: 8px; padding: 10px 12px; border: 1px solid #3a5a8e; border-radius: 6px;
+  background: #141a2e; color: #e8e8f0; text-decoration: none; }
+.pick-card:hover { background: #1c2440; }
+.pick-name { font-weight: 600; }
+.pick-url { font-size: 0.75rem; color: #9ab; word-break: break-all; overflow-wrap: anywhere; }
+.flash-error { color: #ff8a80; }

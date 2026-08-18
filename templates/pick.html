@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>投稿先を選ぶ - 匿名代行</title>
+<link rel="stylesheet" href="/static/style.css?v=12">
+</head>
+<body>
+<div class="container">
+<h1>🎯 投稿先を選ぶ</h1>
+<p class="sub">名前やキーワードで対象を検索して選べます。<br>コメントを書くページ（人物・YouTuber）を指定してください。</p>
+
+<div class="type-tabs">
+{% for p in platforms %}
+<a href="/pick?platform={{ p.id }}" class="type-tab {% if selected_platform == p.id %}active{% endif %}" {% if not p.enabled %}title="未設定"{% endif %}>{{ p.label }}</a>
+{% endfor %}
+</div>
+
+{% if selected_platform == 'twitter' %}
+<p class="hint">※ Twitterの場合は対象URLを直接入力します（<a href="/">投稿フォームはこちら</a>）。</p>
+{% else %}
+<form method="GET" action="/pick" class="search-form">
+<input type="hidden" name="platform" value="{{ selected_platform }}">
+<input type="text" name="q" value="{{ q }}" placeholder="名前・キーワードで検索..." autofocus>
+<button type="submit">🔍 検索</button>
+</form>
+
+{% if search_error %}
+<p class="flash-error">⚠️ 検索に失敗しました: {{ search_error }} <a href="/pick?platform={{ selected_platform }}">ページを再読み込み</a></p>
+{% endif %}
+
+{% if results %}
+<h2 class="h5">検索結果（{{ results | length }}件）</h2>
+<div class="pick-results">
+{% for r in results %}
+<a class="pick-card" href="/?platform={{ selected_platform }}&target_url={{ r.url | urlencode }}">
+  <span class="pick-name">{{ r.name }}</span>
+  <span class="pick-url">{{ r.url }}</span>
+</a>
+{% endfor %}
+</div>
+{% elif q %}
+<p class="hint">検索結果がありません。「{{ q }}」で見つからなかったか、名前を変えて試してください。</p>
+{% endif %}
+{% endif %}
+
+<p class="usage-hint"><a href="/">← 投稿フォームに戻る</a></p>
+</div>
+</body>
+</html>

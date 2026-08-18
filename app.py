@@ -149,6 +149,34 @@ def robots():
 # Public routes (onion-facing)
 # ============================================================
 
+@app.route("/pick")
+def pick():
+    """Search a target page (person/youtuber) on a non-twitter platform."""
+    platform = request.args.get("platform", "twitter")
+    from platforms import available_platforms, get_adapter
+    if platform not in available_platforms() or platform == "twitter":
+        platform = "twitter"
+    q = request.args.get("q", "").strip()
+    adapter = get_adapter(platform) if platform != "twitter" else None
+    results = []
+    search_error = None
+    if q and adapter is not None and hasattr(adapter, "search"):
+        try:
+            results = adapter.search(q) or []
+        except Exception as e:
+            search_error = str(e)
+            log.warning("/pick search failed platform=%s: %s", platform, e)
+    plats = []
+    for pid in available_platforms():
+        a2 = get_adapter(pid)
+        plats.append({"id": pid,
+                      "label": getattr(a2, "label", pid) if a2 else pid,
+                      "enabled": a2 is not None})
+    return _noindex(make_response(render_template(
+        "pick.html", platforms=plats, selected_platform=platform,
+        q=q, results=results, search_error=search_error)))
+
+
 @app.route("/")
 def index():
     selected = request.args.get("type", "tweet")
@@ -173,10 +201,13 @@ def index():
     # Non-twitter platforms use the simple "comment" form
     if platform != "twitter":
         selected = "comment"
+    preset_target = request.args.get("target_url", "").strip()
+    preset_type = request.args.get("type_value", "").strip()
     resp = make_response(render_template("submit.html",
         is_onion=_is_onion(), selected_type=selected,
         onion_hostname=_onion_hostname, show_poll=show_poll,
-        thread_count=thread_count, platforms=plats, selected_platform=platform))
+        thread_count=thread_count, platforms=plats, selected_platform=platform,
+        preset_target=preset_target, preset_type=preset_type))
     return _noindex(resp)
 
 
@@ -199,6 +230,7 @@ def submit():
             if not content:
                 flash("* 投稿内容を入力してください", "error")
                 return redirect(url_for("index", platform=platform))
+            sukikirai_type = request.form.get("type_value", "").strip()
             sub = Submission(
                 platform=platform,
                 submit_type=submit_type,
@@ -207,7 +239,7 @@ def submit():
                 target_tweet_id=_parse_tweet_id(target_url) if target_url else "",
                 like_original=like_original,
                 media_file="[]",
-                poll_choices="",
+                poll_choices=sukikirai_type,
                 poll_duration=0,
                 thread_items="",
                 internal_note=request.form.get("internal_note", "").strip()[:500],

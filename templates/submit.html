@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>匿名ツイート代行</title>
-<link rel="stylesheet" href="/static/style.css?v=11">
+<link rel="stylesheet" href="/static/style.css?v=12">
 </head>
 <body>
 <div class="container">
@@ -53,8 +53,17 @@
 <input type="hidden" name="thread_count" id="thread_count" value="{{ thread_count }}">
 
 {% if selected_platform != 'twitter' %}
-<label for="target_url">対象ページURL <span class="hint">（コメントを送るページのURL）</span></label>
-<input type="url" name="target_url" id="target_url" placeholder="https://tuber-review.com/youtubers/123...">
+{% set plat_label = selected_platform %}
+<label for="target_url">対象ページURL <span class="hint">（コメントを送るページのURL / <a href="/pick?platform={{ selected_platform }}">🔍 検索して選ぶ</a>）</span></label>
+<input type="url" name="target_url" id="target_url" value="{{ preset_target }}" placeholder="https://tuber-review.com/youtubers/123...">
+{% if selected_platform == 'sukikirai' %}
+<label for="type_value">好き？嫌い？ <span class="hint">（コメントに付ける立場）</span></label>
+<select name="type_value" id="type_value">
+  <option value="" {% if not preset_type %}selected{% endif %}>指定なし</option>
+  <option value="好き" {% if preset_type == '好き' %}selected{% endif %}>😍 好き</option>
+  <option value="嫌い" {% if preset_type == '嫌い' %}selected{% endif %}>😡 嫌い</option>
+</select>
+{% endif %}
 <label for="content">投稿内容 <span class="hint">（コメント本文）</span></label>
 <textarea name="content" id="content" rows="4" placeholder="ここにコメント内容を入力..."></textarea>
 <label for="internal_note">📋 管理者へのメモ <span class="hint">（任意 / 公開されません）</span></label>
