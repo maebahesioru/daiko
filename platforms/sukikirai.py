@@ -17,8 +17,8 @@ import json
 import logging
 import os
 import re
-import subprocess
 import urllib.parse
+import urllib.request
 
 from config import PLATFORM_COOKIES
 
@@ -43,15 +43,15 @@ class SukikiraiPlatform:
         body["headers"] = headers
         if post_data is not None:
             body["postData"] = post_data
-        p = subprocess.run(
-            ["curl", "-s", "-m", str(timeout), "-X", "POST", FLARE_URL,
-             "-H", "Content-Type: application/json",
-             "-d", json.dumps(body, ensure_ascii=False)],
-            capture_output=True, timeout=timeout + 20)
+        payload = json.dumps(body, ensure_ascii=False).encode("utf-8")
+        req = urllib.request.Request(
+            FLARE_URL, data=payload,
+            headers={"Content-Type": "application/json"})
         try:
-            return json.loads(p.stdout)
-        except Exception:
-            raise RuntimeError("Flaresolverr didn't return JSON")
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read().decode("utf-8", "ignore"))
+        except Exception as e:
+            raise RuntimeError(f"Flaresolverr error: {e}")
 
     def _person_from_target(self, sub):
         url = (getattr(sub, "target_tweet_url", "") or "").strip()
