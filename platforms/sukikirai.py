@@ -1,47 +1,152 @@
+"""
+suki-kira.com (好き嫌い.com) platform adapter.
+
+VERIFIED WORKING (2026-08-18) — full flow:
+  1. GET  /people/result/<name> (via Flaresolverr) -> if comment form present, skip vote
+  2. If no comment form: POST /people/result/<name> a vote (好き=1 / 嫌い=0)
+     with vote, ok, id, auth1, auth2, auth-r from the vote page.
+  3. GET  /people/result/<name> again -> comment form with auth tokens
+  4. POST /people/comment/<id>/ with body + name_id + type + url + all hiddens
+     -> comment posted, redirects to /people/vote/<name>#comment
+
+Cloudflare + FingerprintJS-issued auth tokens are produced by the in-house
+Flaresolverr (http://10.0.1.42:8191/v1 on the same coolify network).
+"""
+
 import json
 import logging
 import os
+import re
 import subprocess
+import urllib.parse
 
 from config import PLATFORM_COOKIES
 
 log = logging.getLogger("daiko.platform.sukikirai")
+
+FLARE_URL = os.environ.get("FLARE_URL", "http://10.0.1.42:8191/v1")
 
 
 class SukikiraiPlatform:
     id = "sukikirai"
     label = "好き嫌い.com"
 
-    def _cookies(self) -> str:
-        path = PLATFORM_COOKIES.get("sukikirai")
-        if not path or not os.path.exists(path):
-            raise RuntimeError("好き嫌い.com cookies not found (cookies_sukikirai.json)")
-        with open(path, "r", encoding="utf-8") as f:
-            raw = json.load(f)
-        if isinstance(raw, list):
-            pairs = [f"{c.get('name','')}={c.get('value','')}" for c in raw if c.get("name")]
-            return "; ".join(p for p in pairs if "=" in p and p.split("=")[1])
-        if isinstance(raw, dict):
-            return "; ".join(f"{k}={v}" for k, v in raw.items())
-        return str(raw)
+    _UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+           "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    _BASE = "https://suki-kira.com"
+
+    def _flare(self, cmd, url, post_data=None, extra_headers=None, timeout=45):
+        body = {"cmd": cmd, "url": url, "maxTimeout": 40000}
+        headers = {"User-Agent": self._UA}
+        if extra_headers:
+            headers.update(extra_headers)
+        body["headers"] = headers
+        if post_data is not None:
+            body["postData"] = post_data
+        p = subprocess.run(
+            ["curl", "-s", "-m", str(timeout), "-X", "POST", FLARE_URL,
+             "-H", "Content-Type: application/json",
+             "-d", json.dumps(body, ensure_ascii=False)],
+            capture_output=True, timeout=timeout + 20)
+        try:
+            return json.loads(p.stdout)
+        except Exception:
+            raise RuntimeError("Flaresolverr didn't return JSON")
+
+    def _person_from_target(self, sub):
+        url = (getattr(sub, "target_tweet_url", "") or "").strip()
+        if not url:
+            return None
+        m = re.search(r"/people/(?:vote|result)/([^?#]+)", url)
+        if m:
+            return urllib.parse.unquote(m.group(1))
+        return None
+
+    def _hidden(self, html, field):
+        m = re.search(r'name="%s" value="([^"]*)"' % re.escape(field), html)
+        return m.group(1) if m else ""
+
+    def _result_html(self, name):
+        rurl = f"{self._BASE}/people/result/{urllib.parse.quote(name)}"
+        d = self._flare("request.get", rurl)
+        html = (d.get("solution", {}) or {}).get("response") or ""
+        if not html:
+            raise RuntimeError(f"resultページ取得失敗 ({d.get('message')})")
+        return rurl, html
+
+    def _cast_vote(self, name):
+        """Vote (好き) on the person so the server unlocks the comment form."""
+        vurl = f"{self._BASE}/people/vote/{urllib.parse.quote(name)}"
+        d = self._flare("request.get", vurl)
+        vin = (d.get("solution", {}) or {}).get("response") or ""
+        if not vin:
+            raise RuntimeError(f"投票ページ取得失敗 ({d.get('message')})")
+        pid = self._hidden(vin, "id")
+        auth1 = self._hidden(vin, "auth1")
+        auth2 = self._hidden(vin, "auth2")
+        authr = self._hidden(vin, "auth-r")
+        if not (pid and auth1 and auth2):
+            raise RuntimeError("suki-kira: 投票フォームのauthトークン取得失敗")
+        post_data = f"vote=1&ok=ng&id={urllib.parse.quote(pid)}&auth1={urllib.parse.quote(auth1)}&auth2={urllib.parse.quote(auth2)}&auth-r={urllib.parse.quote(authr)}"
+        rurl = f"{self._BASE}/people/result/{urllib.parse.quote(name)}"
+        dv = self._flare("request.post", rurl, post_data=post_data,
+                         extra_headers={"Content-Type": "application/x-www-form-urlencoded",
+                                        "Referer": vurl})
+        out = (dv.get("solution", {}) or {}).get("response") or ""
+        log.info("suki-kira vote: status=%s bytes=%s", dv.get("status"), len(out))
+        return pid, out
 
     async def post(self, sub):
-        cookie = self._cookies()
-        # TODO(endpoint): real POST target + payload once cookies supplied.
-        raise NotImplementedError(
-            "sukikirai endpoint not wired yet — supply cookies + probe site"
-        )
-        url = "https://<sukikirai-post-endpoint>"
+        name = self._person_from_target(sub)
+        if not name:
+            raise ValueError("suki-kira: 対象人物ページのURL (/people/vote/<名前>) が必要です")
+        content = (sub.content or "").strip()
+        if not content:
+            raise ValueError("suki-kira: コメント本文が必要です")
+
+        # 1) Try to get comment form directly from result page
+        rurl, html = self._result_html(name)
+        if 'id="comment-submit-modal"' not in html:
+            # Still no comment form -> vote first to unlock it
+            log.info("suki-kira: コメントフォーム無し -> 投票してアンロック")
+            pid, html = self._cast_vote(name)
+            if 'id="comment-submit-modal"' not in html:
+                raise RuntimeError("suki-kira: 投票後もコメントフォームが見つかりません（1日1回制限の可能性）")
+
         payload = {
-            "bbs_id": sub.target_tweet_id,
-            "message": sub.content,
+            "id": self._hidden(html, "id"),
+            "name_id": (getattr(sub, "poll_choices", "") or "").strip()[:50],
+            "type": "",
+            "url": self._hidden(html, "url"),
+            "body": content,
+            "sum": self._hidden(html, "sum"),
+            "auth1": self._hidden(html, "auth1"),
+            "auth2": self._hidden(html, "auth2"),
+            "auth-r": self._hidden(html, "auth-r"),
+            "ok": self._hidden(html, "ok"),
+            "tag_id": self._hidden(html, "tag_id"),
+            "form_ts": self._hidden(html, "form_ts"),
+            "form_sig": self._hidden(html, "form_sig"),
         }
-        cmd = ["curl", "-s", "-m", "20", "-L",
-               "-H", f"Cookie: {cookie}",
-               "-H", "User-Agent: Mozilla/5.0"]
-        for k, v in payload.items():
-            cmd += ["--data-urlencode", f"{k}={v}"]
-        cmd.append(url)
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-        log.info("sukikirai post rc=%s out=%s err=%s", r.returncode, r.stdout[:200], r.stderr[:200])
-        return {"tweet_id": "", "tweet_url": ""}
+        if not payload["auth1"] or not payload["form_sig"]:
+            raise RuntimeError("suki-kira: 認証トークン(form_sig)が取得できません")
+
+        post_data = "&".join(
+            f"{urllib.parse.quote(k)}={urllib.parse.quote(v)}" for k, v in payload.items())
+        person_id = payload["id"] or self._hidden(html, "id")
+
+        d2 = self._flare(
+            "request.post", f"{self._BASE}/people/comment/{person_id}/",
+            post_data=post_data,
+            extra_headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Referer": rurl,
+            })
+        sol2 = d2.get("solution", {}) or {}
+        out = sol2.get("response") or ""
+        redirect = sol2.get("url") or ""
+        log.info("suki-kira comment: status=%s bytes=%s redirect=%s",
+                 d2.get("status"), len(out), redirect)
+        if "#comment" in redirect or "people/vote" in redirect:
+            return {"tweet_id": person_id or name, "tweet_url": f"{self._BASE}/people/result/{urllib.parse.quote(name)}"}
+        raise RuntimeError(f"suki-kira: コメント投稿失敗 ({d2.get('message')})")

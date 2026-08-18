@@ -152,7 +152,7 @@ def robots():
 @app.route("/")
 def index():
     selected = request.args.get("type", "tweet")
-    if selected not in ("tweet", "retweet", "reply", "quote"):
+    if selected not in ("tweet", "retweet", "reply", "quote", "comment"):
         selected = "tweet"
     show_poll = request.args.get("poll") == "1" and selected in ("tweet", "reply")
     thread_count = max(0, min(4, int(request.args.get("thread", "0") or 0)))
@@ -170,6 +170,9 @@ def index():
         })
     if platform not in available_platforms():
         platform = "twitter"
+    # Non-twitter platforms use the simple "comment" form
+    if platform != "twitter":
+        selected = "comment"
     resp = make_response(render_template("submit.html",
         is_onion=_is_onion(), selected_type=selected,
         onion_hostname=_onion_hostname, show_poll=show_poll,
@@ -189,6 +192,36 @@ def submit():
         content = request.form.get("content", "").strip()
         target_url = request.form.get("target_url", "").strip()
         like_original = 1 if request.form.get("like_original") == "1" else 0
+
+        # --- Non-twitter platforms: simple comment submission ---
+        if platform != "twitter":
+            submit_type = "comment"
+            if not content:
+                flash("* 投稿内容を入力してください", "error")
+                return redirect(url_for("index", platform=platform))
+            sub = Submission(
+                platform=platform,
+                submit_type=submit_type,
+                content=content,
+                target_tweet_url=target_url,
+                target_tweet_id=_parse_tweet_id(target_url) if target_url else "",
+                like_original=like_original,
+                media_file="[]",
+                poll_choices="",
+                poll_duration=0,
+                thread_items="",
+                internal_note=request.form.get("internal_note", "").strip()[:500],
+                edit_pin=f"{random.randint(0, 9999):04d}",
+                status="pending",
+            )
+            db.add(sub)
+            db.commit()
+            sub_id = sub.id
+            log.info("New submission #%d platform=%s type=%s", sub_id, platform, submit_type)
+            resp = make_response(render_template("submitted.html", submission_id=sub_id, edit_pin=sub.edit_pin))
+            return _noindex(resp)
+
+        content = content.replace("\r\n", "\n")
 
         # --- Poll handling ---
         has_poll = request.form.get("has_poll") == "1"
@@ -398,7 +431,7 @@ def edit_submission(sub_id: int):
         new_note = request.form.get("internal_note", "").strip()[:500]
         like = 1 if request.form.get("like_original") == "1" else 0
 
-        if sub.submit_type in ("tweet", "reply", "quote") and not new_content:
+        if sub.submit_type in ("tweet", "reply", "quote", "comment") and not new_content:
             resp = make_response(render_template(
                 "edit.html", found=True, sub=sub, verified=True,
                 error="本文を入力してください"))
@@ -417,6 +450,10 @@ def edit_submission(sub_id: int):
                 return _noindex(resp)
             sub.target_tweet_id = tid
             sub.target_tweet_url = new_target
+        elif sub.submit_type == "comment" and new_target:
+            # Non-Twitter platforms: target page URL
+            sub.target_tweet_url = new_target
+            sub.target_tweet_id = new_target
 
         # Reset review state so it goes back to the queue head
         sub.status = "pending"

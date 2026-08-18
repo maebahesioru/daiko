@@ -30,12 +30,14 @@
 {% endif %}
 {% endwith %}
 
+{% if selected_platform == 'twitter' %}
 <div class="type-tabs">
 <a href="?type=tweet" class="type-tab {% if selected_type == 'tweet' %}active{% endif %}">📝 ツイート</a>
 <a href="?type=retweet" class="type-tab {% if selected_type == 'retweet' %}active{% endif %}">🔄 リツイート</a>
 <a href="?type=reply" class="type-tab {% if selected_type == 'reply' %}active{% endif %}">💬 リプライ</a>
 <a href="?type=quote" class="type-tab {% if selected_type == 'quote' %}active{% endif %}">💬 引用</a>
 </div>
+{% endif %}
 
 {% if platforms %}
 <div class="type-tabs" style="margin-top:8px;">
@@ -49,6 +51,17 @@
 <input type="hidden" name="type" value="{{ selected_type }}">
 <input type="hidden" name="platform" value="{{ selected_platform }}">
 <input type="hidden" name="thread_count" id="thread_count" value="{{ thread_count }}">
+
+{% if selected_platform != 'twitter' %}
+<label for="target_url">対象ページURL <span class="hint">（コメントを送るページのURL）</span></label>
+<input type="url" name="target_url" id="target_url" placeholder="https://tuber-review.com/youtubers/123...">
+<label for="content">投稿内容 <span class="hint">（コメント本文）</span></label>
+<textarea name="content" id="content" rows="4" placeholder="ここにコメント内容を入力..."></textarea>
+<label for="internal_note">📋 管理者へのメモ <span class="hint">（任意 / 公開されません）</span></label>
+<textarea name="internal_note" id="internal_note" rows="2" placeholder="例: この投稿は早めに承認してほしい など"></textarea>
+<p class="usage-hint">{% for p in platforms %}{% if p.id == selected_platform %}{{ p.label }}{% endif %}{% endfor %} にコメント投稿します。</p>
+<button type="submit" id="submit-btn">▶ 送信</button>
+{% else %}
 
 {% if selected_type != 'retweet' %}
 <label for="content">投稿内容 <span class="hint">（全角140字/半角280字）</span></label>
@@ -153,6 +166,7 @@
 </p>
 
 <button type="submit" id="submit-btn">▶ 送信</button>
+{% endif %}
 </form>
 </div>
 

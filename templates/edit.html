@@ -45,7 +45,7 @@
 {% endif %}
 </p>
 
-{% if sub.submit_type in ('tweet', 'reply', 'quote') %}
+{% if sub.submit_type in ('tweet', 'reply', 'quote', 'comment') %}
 <label for="content">投稿内容</label>
 <textarea name="content" id="content" rows="4">{{ sub.content }}</textarea>
 {% endif %}
