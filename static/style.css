@@ -371,3 +371,74 @@ a:hover { color: #8cf; }
 .extra-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
 .extra-row label { width: 110px; flex-shrink: 0; color: #b8c4dc; font-size: 0.9rem; }
 .extra-row select, .extra-row input[type=text] { flex: 1; min-width: 120px; }
+
+/* ===== THEME TOGGLE ===== */
+.theme-toggle {
+  position: fixed; top: 12px; right: 12px; z-index: 1000;
+  background: #1a1a2e; border: 1px solid #3a3a5e; color: #aac;
+  border-radius: 20px; padding: 6px 14px; font-size: 0.85rem; cursor: pointer;
+  margin: 0; text-decoration: none;
+}
+.theme-toggle:hover { background: #2a2a4e; color: #fff; }
+
+/* Light theme (applied via <body data-theme="light">) */
+[data-theme="light"] body,
+[data-theme="light"] {
+  background: #f4f4f8; color: #222;
+}
+[data-theme="light"] body { background: #f4f4f8; color: #222; }
+[data-theme="light"] h1 { color: #111; }
+[data-theme="light"] .sub { color: #555; }
+[data-theme="light"] label { color: #333; }
+[data-theme="light"] input[type="text"],
+[data-theme="light"] input[type="url"],
+[data-theme="light"] input[type="password"],
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+  background: #fff; color: #111; border: 1px solid #ccc;
+}
+[data-theme="light"] a { color: #06c; }
+[data-theme="light"] a:hover { color: #048; }
+[data-theme="light"] .clearnet-warning { background: #fff3e0; border-color: #e0a050; color: #7a4a10; }
+[data-theme="light"] .usage-hint { background: #e8eefe; border-color: #b8c8ee; color: #45a; }
+[data-theme="light"] .type-tab { background: #eef; border-color: #b8c8ee; color: #45a; }
+[data-theme="light"] .type-tab:hover { background: #dde8ff; color: #125; }
+[data-theme="light"] .type-tab.active { background: #cfe0ff; border-color: #4a8aff; color: #003; }
+[data-theme="light"] .counter { color: #06a; }
+[data-theme="light"] .poll-section { background: #eef; border-color: #b8c8ee; }
+[data-theme="light"] .poll-input { background: #fff; border-color: #ccc; color: #111; }
+[data-theme="light"] .thread-block { background: #fafaff; border-color: #ccd5ee; }
+[data-theme="light"] .thread-header { color: #26a; }
+[data-theme="light"] .thread-add-btn { background: #cfe0ff; color: #06a; }
+[data-theme="light"] .small-label { color: #444; }
+[data-theme="light"] .status-link, [data-theme="light"] .status-box,
+[data-theme="light"] .stat { background: #fff; }
+[data-theme="light"] .queue-table th { background: #fff; color: #333; }
+[data-theme="light"] .queue-table th, [data-theme="light"] .queue-table td { border-bottom-color: #ddd; }
+[data-theme="light"] .queue-table tr:hover { background: #eef; }
+[data-theme="light"] .reject-note { background: #fff; color: #222; border-color: #ccc; }
+[data-theme="light"] .internal-note { background: #fff8e0; border-color: #d8d060; color: #5a4a10; }
+[data-theme="light"] .pin-box { background: #e8fae8; border-color: #7ab87a; }
+[data-theme="light"] .pin-display { color: #0a0; }
+[data-theme="light"] .admin-media img, [data-theme="light"] .admin-media video { border-color: #ccc; }
+[data-theme="light"] .platform-badge { background: #e0e8ff; border-color: #9ab; color: #036; }
+[data-theme="light"] .pick-card { background: #fff; border-color: #b8c8ee; color: #123; }
+[data-theme="light"] .pick-card:hover { background: #eef; }
+[data-theme="light"] .pick-url { color: #567; }
+[data-theme="light"] .extra-fields { background: #f0f4ff; border-color: #b8c8ee; }
+[data-theme="light"] .extra-fields h3 { color: #036; }
+[data-theme="light"] .extra-row label { color: #345; }
+[data-theme="light"] .theme-toggle { background: #fff; border-color: #ccc; color: #333; }
+[data-theme="light"] .theme-toggle:hover { background: #eef; color: #125; }
+[data-theme="light"] .error-msg { color: #d00; background: #ffe0e0; }
+[data-theme="light"] .flash-error { color: #d00; }
+[data-theme="light"] .flash-success { color: #070; }
+[data-theme="light"] .note { color: #666; }
+[data-theme="light"] .status-pending { color: #c80; }
+[data-theme="light"] .status-approved { color: #06a; }
+[data-theme="light"] .status-posted { color: #080; }
+[data-theme="light"] .status-rejected, [data-theme="light"] .status-failed { color: #d00; }
+
+/* Admin platform filter tabs */
+.pf-tabs { margin-bottom: 0.5rem; }
+.pf-tabs .type-tab { flex: 0 0 auto; min-width: 90px; }

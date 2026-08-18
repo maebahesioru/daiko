@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>管理者ログイン</title>
-<link rel="stylesheet" href="/static/style.css?v=13">
+<link rel="stylesheet" href="/static/style.css?v=14">
 </head>
 <body>
 <div class="container">
@@ -26,5 +26,11 @@
 <button type="submit">ログイン</button>
 </form>
 </div>
+<button type="button" onclick="toggleTheme()" class="theme-toggle" id="theme-toggle-btn">◐ テーマ</button>
+<script>
+(function(){try{var t=localStorage.getItem('daiko_theme');if(t==='light'){document.querySelector('body').setAttribute('data-theme','light');document.getElementById('theme-toggle-btn').textContent='◑ ライト'}else{document.querySelector('body').removeAttribute('data-theme');document.getElementById('theme-toggle-btn').textContent='◐ テーマ'}}catch(e){}})();
+function toggleTheme(){try{var b=document.querySelector('body');if(b.getAttribute('data-theme')==='light'){b.removeAttribute('data-theme');localStorage.setItem('daiko_theme','dark');document.getElementById('theme-toggle-btn').textContent='◐ テーマ'}else{b.setAttribute('data-theme','light');localStorage.setItem('daiko_theme','light');document.getElementById('theme-toggle-btn').textContent='◑ ライト'}}catch(e){}}
+</script>
+
 </body>
 </html>

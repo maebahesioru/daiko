@@ -203,11 +203,12 @@ def index():
         selected = "comment"
     preset_target = request.args.get("target_url", "").strip()
     preset_type = request.args.get("type_value", "").strip()
+    preset_sname = request.args.get("name_value", "").strip()
     resp = make_response(render_template("submit.html",
         is_onion=_is_onion(), selected_type=selected,
         onion_hostname=_onion_hostname, show_poll=show_poll,
         thread_count=thread_count, platforms=plats, selected_platform=platform,
-        preset_target=preset_target, preset_type=preset_type))
+        preset_target=preset_target, preset_type=preset_type, preset_sname=preset_sname))
     return _noindex(resp)
 
 
@@ -242,6 +243,13 @@ def submit():
                 for idx in ("1", "2", "3", "4", "6", "7", "8", "9", "10"):
                     v = request.form.get(f"y_r{idx}", "0").strip()
                     extra["ratings"][idx] = int(v) if v.isdigit() else 0
+                poll_choices = json.dumps(extra, ensure_ascii=False)
+            elif platform == "sukikirai":
+                # sukikirai: name (名前) + type (好き/嫌い) as JSON
+                extra = {
+                    "name": request.form.get("s_name", "").strip()[:50],
+                    "type": sukikirai_type,
+                }
                 poll_choices = json.dumps(extra, ensure_ascii=False)
             else:
                 poll_choices = sukikirai_type
@@ -501,6 +509,25 @@ def edit_submission(sub_id: int):
             sub.target_tweet_url = new_target
             sub.target_tweet_id = new_target
 
+        # Save platform-specific extra fields (yoron ratings / sukikirai name+type)
+        if sub.submit_type == "comment" and sub.platform == "yoron":
+            extra = {
+                "name": request.form.get("y_name", "").strip()[:20],
+                "sex": request.form.get("y_sex", "").strip(),
+                "age": request.form.get("y_age", "").strip(),
+                "ratings": {},
+            }
+            for idx in ("1", "2", "3", "4", "6", "7", "8", "9", "10"):
+                v = request.form.get(f"y_r{idx}", "0").strip()
+                extra["ratings"][idx] = int(v) if v.isdigit() else 0
+            sub.poll_choices = json.dumps(extra, ensure_ascii=False)
+        elif sub.submit_type == "comment" and sub.platform == "sukikirai":
+            extra = {
+                "name": request.form.get("s_name", "").strip()[:50],
+                "type": request.form.get("type_value", "").strip(),
+            }
+            sub.poll_choices = json.dumps(extra, ensure_ascii=False)
+
         # Reset review state so it goes back to the queue head
         sub.status = "pending"
         sub.reviewed_at = None
@@ -542,13 +569,16 @@ def admin_queue():
 
     db = SessionLocal()
     try:
+        # Platform filter (?pf=<id> or 'all')
+        from platforms import available_platforms
+        pf = request.args.get("pf", "all")
+        if pf not in available_platforms() and pf != "all":
+            pf = "all"
+        q = db.query(Submission)
+        if pf != "all":
+            q = q.filter(Submission.platform == pf)
         # Show all non-deleted, newest first
-        subs = (
-            db.query(Submission)
-            .order_by(Submission.submitted_at.desc())
-            .limit(200)
-            .all()
-        )
+        subs = q.order_by(Submission.submitted_at.desc()).limit(200).all()
 
         # Calculate queue position for approved items
         from config import MIN_POST_INTERVAL_SECONDS
@@ -578,8 +608,14 @@ def admin_queue():
                 mins_until = max(0, int(remaining // 60))
             queue_map[s.id] = (i + 1, mins_until)
 
+        from platforms import available_platforms as _ap, get_adapter
+        plats = []
+        for pid in _ap():
+            a = get_adapter(pid)
+            plats.append({"id": pid, "label": getattr(a, "label", pid) if a else pid})
         return render_template("admin.html", submissions=subs,
-                               queue_map=queue_map, interval_mins=interval_mins)
+                               queue_map=queue_map, interval_mins=interval_mins,
+                               pf=pf, plats=plats)
     finally:
         db.close()
 

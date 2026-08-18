@@ -62,15 +62,18 @@ class SukikiraiPlatform:
             return urllib.parse.unquote(m.group(1))
         return None
 
-    def _type_value(self, sub):
-        """Map submitted 好き/嫌い to the site's type value.
-        The comment form's type select uses option text 好き派/嫌い派."""
-        tv = (getattr(sub, "poll_choices", "") or "").strip()
-        if "嫌い" in tv:
-            return "嫌い派"
-        if "好き" in tv:
-            return "好き派"
-        return ""
+    def _extra(self, sub):
+        """Parse poll_choices JSON {name, type} if present."""
+        raw = (getattr(sub, "poll_choices", "") or "").strip()
+        if raw.startswith("{"):
+            try:
+                d = json.loads(raw)
+                if isinstance(d, dict):
+                    return d
+            except Exception:
+                pass
+        # Fallback: raw string = legacy 好き/嫌い
+        return {"name": "", "type": raw}
 
     def _hidden(self, html, field):
         m = re.search(r'name="%s" value="([^"]*)"' % re.escape(field), html)
@@ -149,10 +152,13 @@ class SukikiraiPlatform:
             if 'id="comment-submit-modal"' not in html:
                 raise RuntimeError("suki-kira: 投票後もコメントフォームが見つかりません（1日1回制限の可能性）")
 
+        extra = self._extra(sub)
+        type_raw = str(extra.get("type", "") or "")
+        type_val = "嫌い派" if "嫌い" in type_raw else ("好き派" if "好き" in type_raw else "")
         payload = {
             "id": self._hidden(html, "id"),
-            "name_id": (getattr(sub, "poll_choices", "") or "").strip()[:50],
-            "type": self._type_value(sub),
+            "name_id": str(extra.get("name", "") or "")[:50],
+            "type": type_val,
             "url": self._hidden(html, "url"),
             "body": content,
             "sum": self._hidden(html, "sum"),

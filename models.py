@@ -35,6 +35,26 @@ class Submission(Base):
     result_tweet_id = Column(String(64), default="")
     result_tweet_url = Column(Text, default="")
 
+    def poll_choices_parsed(self):
+        """Parse poll_choices: JSON dict (yoron/sukikirai extra) or raw str."""
+        import json as _j
+        raw = self.poll_choices or ""
+        if raw.startswith("{"):
+            try:
+                d = _j.loads(raw)
+                if isinstance(d, dict):
+                    name = str(d.get("name", "") or "")
+                    return type("EX", (), {
+                        "name": name,
+                        "sex": str(d.get("sex", "") or ""),
+                        "age": str(d.get("age", "") or ""),
+                        "type": str(d.get("type", "") or ""),
+                        "ratings": d.get("ratings", {}) if isinstance(d.get("ratings"), dict) else {},
+                    })()
+            except Exception:
+                pass
+        return type("EX", (), {"name": "", "sex": "", "age": "", "type": raw, "ratings": {}})()
+
 
 SessionLocal = sessionmaker(bind=engine)
 

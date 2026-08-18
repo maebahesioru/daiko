@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>投稿の編集 - 匿名ツイート代行</title>
-<link rel="stylesheet" href="/static/style.css?v=13">
+<link rel="stylesheet" href="/static/style.css?v=14">
 </head>
 <body>
 <div class="container">
@@ -55,6 +55,47 @@
 <input type="url" name="target_url" id="target_url" value="{{ sub.target_tweet_url }}" placeholder="https://x.com/user/status/123456...">
 {% endif %}
 
+{% if sub.submit_type == 'comment' and sub.platform == 'yoron' %}
+{% set ex = sub.poll_choices_parsed() %}
+<div class="extra-fields">
+<h3>📊 評価項目 <span class="hint">（すべて任意）</span></h3>
+<div class="extra-row"><label for="y_name">名前</label><input type="text" name="y_name" id="y_name" value="{{ ex.name }}" placeholder="投稿者名（空=匿名）"></div>
+<div class="extra-row"><label for="y_sex">性別</label><select name="y_sex" id="y_sex">
+  <option value="" {% if not ex.sex %}selected{% endif %}>無回答</option>
+  <option value="female" {% if ex.sex == 'female' %}selected{% endif %}>女性</option>
+  <option value="male" {% if ex.sex == 'male' %}selected{% endif %}>男性</option>
+</select></div>
+<div class="extra-row"><label for="y_age">年齢</label><select name="y_age" id="y_age">
+  <option value="" {% if not ex.age %}selected{% endif %}>無回答</option>
+  {% for a in ['10','20','30','40','50','60','70'] %}<option value="{{ a }}" {% if ex.age == a %}selected{% endif %}>{{ a }}代</option>{% endfor %}
+</select></div>
+{% for idx, label in [('1','総合評価'),('2','ルックス'),('3','トーク力'),('4','企画力'),('9','頭脳・知識'),('7','笑い、ユーモア'),('8','人間性'),('6','カリスマ性'),('10','好感度')] %}
+<div class="extra-row"><label for="y_r{{ idx }}">{{ label }}</label>
+<select name="y_r{{ idx }}" id="y_r{{ idx }}">
+  {% for v in ['0','1','2','3','4','5'] %}<option value="{{ v }}" {% if ex.ratings.get(idx) == v %}selected{% endif %}>{{ '評価しない' if v == '0' else v + '点' }}</option>{% endfor %}
+</select></div>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if sub.submit_type == 'comment' and sub.platform == 'sukikirai' %}
+{% set ex = sub.poll_choices_parsed() %}
+<div class="extra-fields">
+<h3>📝 投稿オプション</h3>
+<div class="extra-row"><label for="s_name">名前</label><input type="text" name="s_name" id="s_name" value="{{ ex.name }}" placeholder="投稿者名（空=匿名）"></div>
+<div class="extra-row"><label for="type_value">好き？嫌い？</label><select name="type_value" id="type_value">
+  <option value="" {% if not ex.type %}selected{% endif %}>指定なし</option>
+  <option value="好き" {% if ex.type == '好き' %}selected{% endif %}>😍 好き</option>
+  <option value="嫌い" {% if ex.type == '嫌い' %}selected{% endif %}>😡 嫌い</option>
+</select></div>
+</div>
+{% endif %}
+
+{% if sub.submit_type == 'comment' %}
+<label for="target_url">対象ページURL</label>
+<input type="url" name="target_url" id="target_url" value="{{ sub.target_tweet_url }}" placeholder="対象ページのURL">
+{% endif %}
+
 {% if sub.submit_type in ('retweet', 'reply', 'quote') %}
 <label class="checkbox-label">
 <input type="checkbox" name="like_original" value="1" {% if sub.like_original %}checked{% endif %}>
@@ -71,5 +112,11 @@
 {% endif %}
 
 </div>
+<button type="button" onclick="toggleTheme()" class="theme-toggle" id="theme-toggle-btn">◐ テーマ</button>
+<script>
+(function(){try{var t=localStorage.getItem('daiko_theme');if(t==='light'){document.querySelector('body').setAttribute('data-theme','light');document.getElementById('theme-toggle-btn').textContent='◑ ライト'}else{document.querySelector('body').removeAttribute('data-theme');document.getElementById('theme-toggle-btn').textContent='◐ テーマ'}}catch(e){}})();
+function toggleTheme(){try{var b=document.querySelector('body');if(b.getAttribute('data-theme')==='light'){b.removeAttribute('data-theme');localStorage.setItem('daiko_theme','dark');document.getElementById('theme-toggle-btn').textContent='◐ テーマ'}else{b.setAttribute('data-theme','light');localStorage.setItem('daiko_theme','light');document.getElementById('theme-toggle-btn').textContent='◑ ライト'}}catch(e){}}
+</script>
+
 </body>
 </html>

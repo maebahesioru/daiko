@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>匿名ツイート代行</title>
-<link rel="stylesheet" href="/static/style.css?v=13">
+<link rel="stylesheet" href="/static/style.css?v=14">
 </head>
 <body>
 <div class="container">
@@ -57,12 +57,21 @@
 <label for="target_url">対象ページURL <span class="hint">（コメントを送るページのURL / <a href="/pick?platform={{ selected_platform }}">🔍 検索して選ぶ</a>）</span></label>
 <input type="url" name="target_url" id="target_url" value="{{ preset_target }}" placeholder="https://tuber-review.com/youtubers/123...">
 {% if selected_platform == 'sukikirai' %}
-<label for="type_value">好き？嫌い？ <span class="hint">（コメントに付ける立場）</span></label>
-<select name="type_value" id="type_value">
-  <option value="" {% if not preset_type %}selected{% endif %}>指定なし</option>
-  <option value="好き" {% if preset_type == '好き' %}selected{% endif %}>😍 好き</option>
-  <option value="嫌い" {% if preset_type == '嫌い' %}selected{% endif %}>😡 嫌い</option>
-</select>
+<div class="extra-fields">
+<h3>📝 投稿オプション <span class="hint">（すべて任意）</span></h3>
+<div class="extra-row">
+  <label for="s_name">名前</label>
+  <input type="text" name="s_name" id="s_name" placeholder="投稿者名（空=匿名・なりすまし防止ID）" value="{{ preset_sname }}">
+</div>
+<div class="extra-row">
+  <label for="type_value">好き？嫌い？</label>
+  <select name="type_value" id="type_value">
+    <option value="" {% if not preset_type %}selected{% endif %}>指定なし</option>
+    <option value="好き" {% if preset_type == '好き' %}selected{% endif %}>😍 好き</option>
+    <option value="嫌い" {% if preset_type == '嫌い' %}selected{% endif %}>😡 嫌い</option>
+  </select>
+</div>
+</div>
 {% endif %}
 
 {% if selected_platform == 'yoron' %}
@@ -339,6 +348,12 @@
     };
 
 })();
+</script>
+
+<button type="button" onclick="toggleTheme()" class="theme-toggle" id="theme-toggle-btn">◐ テーマ</button>
+<script>
+(function(){try{var t=localStorage.getItem('daiko_theme');if(t==='light'){document.querySelector('body').setAttribute('data-theme','light');document.getElementById('theme-toggle-btn').textContent='◑ ライト'}else{document.querySelector('body').removeAttribute('data-theme');document.getElementById('theme-toggle-btn').textContent='◐ テーマ'}}catch(e){}})();
+function toggleTheme(){try{var b=document.querySelector('body');if(b.getAttribute('data-theme')==='light'){b.removeAttribute('data-theme');localStorage.setItem('daiko_theme','dark');document.getElementById('theme-toggle-btn').textContent='◐ テーマ'}else{b.setAttribute('data-theme','light');localStorage.setItem('daiko_theme','light');document.getElementById('theme-toggle-btn').textContent='◑ ライト'}}catch(e){}}
 </script>
 
 </body>

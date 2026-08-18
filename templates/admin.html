@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>管理者パネル - 匿名ツイート代行</title>
-<link rel="stylesheet" href="/static/style.css?v=13">
+<link rel="stylesheet" href="/static/style.css?v=14">
 </head>
 <body>
 <div class="container container-wide">
@@ -31,6 +31,14 @@
 <div class="stat">✅ 承認済 <b>{{ approved|length }}</b></div>
 <div class="stat">🐦 投稿済 <b>{{ posted|length }}</b></div>
 <div class="stat">❌ 却下 <b>{{ rejected|length }}</b></div>
+</div>
+
+
+<div class="type-tabs pf-tabs">
+<a href="/admin/queue?pf=all" class="type-tab {% if pf == 'all' %}active{% endif %}">🌐 すべて</a>
+{% for p in plats %}
+<a href="/admin/queue?pf={{ p.id }}" class="type-tab {% if pf == p.id %}active{% endif %}">{{ p.label }}</a>
+{% endfor %}
 </div>
 
 <div class="queue-table-wrapper">
@@ -144,5 +152,11 @@
 </div>
 
 <meta http-equiv="refresh" content="30">
+<button type="button" onclick="toggleTheme()" class="theme-toggle" id="theme-toggle-btn">◐ テーマ</button>
+<script>
+(function(){try{var t=localStorage.getItem('daiko_theme');if(t==='light'){document.querySelector('body').setAttribute('data-theme','light');document.getElementById('theme-toggle-btn').textContent='◑ ライト'}else{document.querySelector('body').removeAttribute('data-theme');document.getElementById('theme-toggle-btn').textContent='◐ テーマ'}}catch(e){}})();
+function toggleTheme(){try{var b=document.querySelector('body');if(b.getAttribute('data-theme')==='light'){b.removeAttribute('data-theme');localStorage.setItem('daiko_theme','dark');document.getElementById('theme-toggle-btn').textContent='◐ テーマ'}else{b.setAttribute('data-theme','light');localStorage.setItem('daiko_theme','light');document.getElementById('theme-toggle-btn').textContent='◑ ライト'}}catch(e){}}
+</script>
+
 </body>
 </html>
